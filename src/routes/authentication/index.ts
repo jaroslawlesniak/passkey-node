@@ -1,6 +1,9 @@
-import { authentication } from '../../controllers';
+import { authentication } from '@/controllers';
 import { withRouter } from '../routing';
+import { Routes } from '../types';
 
-export default withRouter(router => {
+const routes: Routes = () => withRouter(router => {
   router.get('/', authentication.index);
 });
+
+export default routes;
