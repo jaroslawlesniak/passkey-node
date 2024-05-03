@@ -15,13 +15,14 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
+  token     String   @unique
 
   credentials Credential[]
 }
 
 model Credential {
   id         Int      @id @default(autoincrement())
+  token      String
   userId     Int
   publicKey  String
   counter    Int
