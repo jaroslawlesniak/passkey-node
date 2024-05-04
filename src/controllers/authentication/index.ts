@@ -21,9 +21,7 @@ export const passkeyRegistrationStart: Controller = (req, res) => {
 export const passkeyRegistrationFinish: Controller = (req, res) => {
   const { userToken, challenge } = extract(req);
 
-  authentication.finishUserRegistration(userToken, req.body, challenge).then(user => {
-    console.log(user);
-
+  authentication.finishUserRegistration(userToken, req.body, challenge).then(() => {
     return res.status(200).send('passkeyRegistrationFinish');
   })
   // .catch(() => res.status(500).send())

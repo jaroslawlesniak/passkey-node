@@ -39,7 +39,6 @@ export const finishUserRegistration = (userToken: string, body: RegistrationResp
   }).then(async ({ verified, registrationInfo }) => {
     if (verified && registrationInfo) {
       const { credentialPublicKey, credentialID, counter } = registrationInfo;
-      console.log(registrationInfo)
 
       const user = await userRepository.getByToken(userToken);
 
@@ -72,10 +71,9 @@ const toAuthenticatorDevice = ({ counter, credentialId, publicKey, transports }:
 })
 
 export const finishUserLogging = async (body: AuthenticationResponseJSON, challenge: string) => {
-  const credentialId = isoBase64URL.toBase64(body.rawId); // what about this?
-  const bodyCredIdBuffer = isoBase64URL.toBuffer(body.rawId);
-
-  const credential = await credentialRepository.getByCredentialId(uint8ArrayToBase64(bodyCredIdBuffer))
+  const credentialId = isoBase64URL.toBase64(body.rawId).replace(/=+$/, ''); // what about this?
+  // const bodyCredIdBuffer = isoBase64URL.toBuffer(body.rawId);
+  const credential = await credentialRepository.getByCredentialId(credentialId)
 
   if (!credential) {
     throw new Error('DB credential not found');
