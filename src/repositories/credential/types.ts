@@ -1,6 +1,6 @@
 export type CreatePayload = {
   userId: number;
-  credentialId: number;
+  credentialId: string;
   publicKey: string;
   counter: number;
   transports: string;
@@ -8,7 +8,7 @@ export type CreatePayload = {
 
 export type UpdatePayload = {
   userId?: number;
-  credentialId?: number;
+  credentialId?: string;
   publicKey?: string;
   counter?: number;
   transports?: string;

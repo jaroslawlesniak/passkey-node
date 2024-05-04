@@ -7,6 +7,11 @@ export const getById = (id: number) =>
     where: { id }
   });
 
+export const getByToken = (token: string) =>
+  prisma.user.findFirstOrThrow({
+    where: { token }
+  });
+
 export const getByUserName = (userName: string) =>
   prisma.user.findFirstOrThrow({
     where: { userName }
