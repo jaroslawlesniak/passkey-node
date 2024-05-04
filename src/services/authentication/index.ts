@@ -1,7 +1,9 @@
-import { numberToUint8, uint8ArrayToBase64 } from "@/lib/buffer";
+import { numberToUint8, uint8ArrayToBase64, base64ToUint8Array } from "@/lib/buffer";
 import { credentialRepository, userRepository } from "@/repositories";
-import { generateRegistrationOptions, verifyRegistrationResponse } from "@simplewebauthn/server";
-import { RegistrationResponseJSON } from "@simplewebauthn/server/script/deps";
+import { VerifyAuthenticationResponseOpts, generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
+import { AuthenticationResponseJSON, AuthenticatorDevice, AuthenticatorTransportFuture, RegistrationResponseJSON } from "@simplewebauthn/server/script/deps";
+import { isoBase64URL } from '@simplewebauthn/server/helpers'
+import { Credential } from "@prisma/client";
 
 const ES256 = -7;
 const RS256 = -257;
@@ -45,7 +47,7 @@ export const finishUserRegistration = (userToken: string, body: RegistrationResp
         counter,
         credentialId: credentialID,
         publicKey: uint8ArrayToBase64(credentialPublicKey),
-        transports: body.response.transports?.[0] || '',
+        transports: body.response.transports || [],
         userId: user.id,
       });
     } else {
@@ -53,10 +55,55 @@ export const finishUserRegistration = (userToken: string, body: RegistrationResp
     }
   });
 
-export const startUserLogging = () => {
-  console.log('startUserLogging');
-}
+export const startUserLogging = (userName: string) => 
+  userRepository.getByUserName(userName).then(user => 
+    generateAuthenticationOptions({
+      timeout: 60000,
+      allowCredentials: [],
+      userVerification: 'required',
+      rpID,
+  }).then(options => ({ user, options })));
 
-export const finishUserLogging = () => {
-  console.log('finishUserLogging');
+const toAuthenticatorDevice = ({ counter, credentialId, publicKey, transports }: Credential): AuthenticatorDevice | null => ({
+  counter,
+  credentialID: credentialId,
+  credentialPublicKey: base64ToUint8Array(publicKey),
+  transports: transports as AuthenticatorTransportFuture[]
+})
+
+export const finishUserLogging = async (body: AuthenticationResponseJSON, challenge: string) => {
+  const credentialId = isoBase64URL.toBase64(body.rawId);
+  const bodyCredIdBuffer = isoBase64URL.toBuffer(body.rawId);
+  const dbCredential: AuthenticatorDevice | null = await credentialRepository.getByCredentialId(credentialId).then(toAuthenticatorDevice);
+
+  if (!dbCredential) {
+    throw new Error('DB credential not found');
+  }
+
+  const opts: VerifyAuthenticationResponseOpts = {
+    response: body,
+    expectedChallenge: challenge,
+    expectedOrigin: origin,
+    expectedRPID: rpID,
+    authenticator: dbCredential,
+  };
+
+  const verification = await verifyAuthenticationResponse(opts);
+
+  const { verified, authenticationInfo } = verification;
+
+  if (verified) {
+    const prevCredential = await credentialRepository.getByCredentialId(uint8ArrayToBase64(bodyCredIdBuffer));
+
+    await credentialRepository.update(
+      prevCredential.id,
+      {
+        counter: authenticationInfo.newCounter
+      }
+    );
+
+    return Promise.resolve();
+  } else {
+    throw new Error('Not verified');
+  }
 }

@@ -21,7 +21,7 @@ export const passkeyRegistrationStart: Controller = (req, res) => {
 
 export const passkeyRegistrationFinish: Controller = (req, res) => {
   const { userToken, challenge } = extract(req);
-  console.log(userToken, challenge)
+
   authentication.finishUserRegistration(userToken, req.body, challenge).then(user => {
     console.log(user);
 
@@ -29,14 +29,22 @@ export const passkeyRegistrationFinish: Controller = (req, res) => {
   });
 };
 
-export const passkeyLoginStart: Controller = (_, res) => {
-  authentication.startUserLogging();
+export const passkeyLoginStart: Controller = (req, res) => {
+  const { userName } = req.body;
 
-  return res.status(200).send('passkeyLoginStart');
+  authentication.startUserLogging(userName).then(({ options, user }) => {
+    const token = sign(user.token, options.challenge);
+
+    res.cookie('token', token, { maxAge: 900000, httpOnly: true })
+
+    return res.status(200).send(options);
+  });
 };
 
-export const passkeyLoginFinish: Controller = (_, res) => {
-  authentication.finishUserLogging();
+export const passkeyLoginFinish: Controller = (req, res) => {
+  const { challenge } = extract(req);
 
-  return res.status(200).send('passkeyLoginFinish');
+  authentication.finishUserLogging(req.body, challenge).then(() => {
+    return res.status(200).send('passkeyLoginFinish');
+  });
 };

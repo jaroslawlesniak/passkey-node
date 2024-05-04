@@ -3,7 +3,7 @@ export type CreatePayload = {
   credentialId: string;
   publicKey: string;
   counter: number;
-  transports: string;
+  transports: string[];
 };
 
 export type UpdatePayload = {
