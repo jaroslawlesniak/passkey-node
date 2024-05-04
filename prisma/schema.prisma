@@ -16,16 +16,19 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   token     String   @unique
+  userName  String   @unique
 
   credentials Credential[]
 }
 
 model Credential {
   id         Int      @id @default(autoincrement())
-  token      String
-  userId     Int
+  token      String   @unique
+
   publicKey  String
   counter    Int
   transports String?
+
+  userId     Int
   user       User     @relation(fields: [userId], references: [id])
 }

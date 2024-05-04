@@ -1,7 +1,15 @@
-export const registerUser = () => {
-  console.log('register');
+export const startUserRegistration = () => {
+  console.log('startUserRegistration');
 }
 
-export const signInUser = () => {
-  console.log('sign in');
+export const finishUserRegistration = () => {
+  console.log('finishUserRegistration');
+}
+
+export const startUserLogging = () => {
+  console.log('startUserLogging');
+}
+
+export const finishUserLogging = () => {
+  console.log('finishUserLogging');
 }
