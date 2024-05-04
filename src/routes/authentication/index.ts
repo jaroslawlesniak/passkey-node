@@ -4,10 +4,10 @@ import { Routes } from '../types';
 
 const routes: Routes = () => withRouter(router => {
   router.get('/', authentication.index);
-  router.get('/passkey/register/begin', authentication.passkeyRegistrationStart);
-  router.get('/passkey/register/finish', authentication.passkeyRegistrationFinish);
-  router.get('/passkey/login/begin', authentication.passkeyLoginStart);
-  router.get('/passkey/login/finish', authentication.passkeyLoginFinish);
+  router.post('/passkey/register/begin', authentication.passkeyRegistrationStart);
+  router.post('/passkey/register/finish', authentication.passkeyRegistrationFinish);
+  router.post('/passkey/login/begin', authentication.passkeyLoginStart);
+  router.post('/passkey/login/finish', authentication.passkeyLoginFinish);
 });
 
 export default routes;

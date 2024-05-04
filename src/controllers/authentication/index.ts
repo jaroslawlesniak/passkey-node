@@ -13,10 +13,9 @@ export const passkeyRegistrationStart: Controller = (req, res) => {
   authentication.startUserRegistration(userName).then(({ options, user }) => {
     const token = sign(user.token, options.challenge);
 
-    res.cookie('token', token, { maxAge: 900000, httpOnly: true })
-
-    return res.status(200).send(options);
-  });
+    return res.status(200).json({ options, token });
+  })
+  // .catch(() => res.status(500).send())
 };
 
 export const passkeyRegistrationFinish: Controller = (req, res) => {
@@ -26,7 +25,8 @@ export const passkeyRegistrationFinish: Controller = (req, res) => {
     console.log(user);
 
     return res.status(200).send('passkeyRegistrationFinish');
-  });
+  })
+  // .catch(() => res.status(500).send())
 };
 
 export const passkeyLoginStart: Controller = (req, res) => {
@@ -35,16 +35,15 @@ export const passkeyLoginStart: Controller = (req, res) => {
   authentication.startUserLogging(userName).then(({ options, user }) => {
     const token = sign(user.token, options.challenge);
 
-    res.cookie('token', token, { maxAge: 900000, httpOnly: true })
-
-    return res.status(200).send(options);
-  });
+    return res.status(200).json({ options, token });
+  })
+  // .catch(() => res.status(500).send())
 };
 
 export const passkeyLoginFinish: Controller = (req, res) => {
   const { challenge } = extract(req);
 
-  authentication.finishUserLogging(req.body, challenge).then(() => {
-    return res.status(200).send('passkeyLoginFinish');
-  });
+  authentication.finishUserLogging(req.body, challenge)
+    .then(() => res.status(200).send('passkeyLoginFinish'))
+    // .catch(() => res.status(500).send())
 };

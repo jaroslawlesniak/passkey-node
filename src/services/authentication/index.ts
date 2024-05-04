@@ -10,7 +10,7 @@ const RS256 = -257;
 
 const rpName: string = 'Passkeys Tutorial';
 const rpID: string = 'localhost';
-const origin: string = `http://${rpID}:8080`;
+const origin: string = `http://${rpID}:5173`;
 
 export const startUserRegistration = async (userName: string) =>
   userRepository.create(userName).then(user => 
@@ -64,7 +64,7 @@ export const startUserLogging = (userName: string) =>
       rpID,
   }).then(options => ({ user, options })));
 
-const toAuthenticatorDevice = ({ counter, credentialId, publicKey, transports }: Credential): AuthenticatorDevice | null => ({
+const toAuthenticatorDevice = ({ counter, credentialId, publicKey, transports }: Credential): AuthenticatorDevice => ({
   counter,
   credentialID: credentialId,
   credentialPublicKey: base64ToUint8Array(publicKey),
@@ -72,13 +72,16 @@ const toAuthenticatorDevice = ({ counter, credentialId, publicKey, transports }:
 })
 
 export const finishUserLogging = async (body: AuthenticationResponseJSON, challenge: string) => {
-  const credentialId = isoBase64URL.toBase64(body.rawId);
+  const credentialId = isoBase64URL.toBase64(body.rawId); // what about this?
   const bodyCredIdBuffer = isoBase64URL.toBuffer(body.rawId);
-  const dbCredential: AuthenticatorDevice | null = await credentialRepository.getByCredentialId(credentialId).then(toAuthenticatorDevice);
 
-  if (!dbCredential) {
+  const credential = await credentialRepository.getByCredentialId(uint8ArrayToBase64(bodyCredIdBuffer))
+
+  if (!credential) {
     throw new Error('DB credential not found');
   }
+
+  const dbCredential: AuthenticatorDevice = toAuthenticatorDevice(credential);
 
   const opts: VerifyAuthenticationResponseOpts = {
     response: body,
@@ -93,10 +96,8 @@ export const finishUserLogging = async (body: AuthenticationResponseJSON, challe
   const { verified, authenticationInfo } = verification;
 
   if (verified) {
-    const prevCredential = await credentialRepository.getByCredentialId(uint8ArrayToBase64(bodyCredIdBuffer));
-
     await credentialRepository.update(
-      prevCredential.id,
+      credential.id,
       {
         counter: authenticationInfo.newCounter
       }
