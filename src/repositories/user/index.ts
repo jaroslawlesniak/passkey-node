@@ -12,15 +12,15 @@ export const getByToken = (token: string) =>
     where: { token }
   });
 
-export const getByUserName = (userName: string) =>
+export const getByEmail = (email: string) =>
   prisma.user.findFirstOrThrow({
-    where: { userName }
+    where: { email }
   });
 
-export const create = (userName: string) =>
+export const create = (email: string) =>
   prisma.user.create({
     data: {
       token: uuid(),
-      userName,
+      email,
     }
   });

@@ -12,13 +12,13 @@ const rpName: string = 'Passkeys Tutorial';
 const rpID: string = 'localhost';
 const origin: string = `http://${rpID}:5173`;
 
-export const startUserRegistration = async (userName: string) =>
-  userRepository.create(userName).then(user => 
+export const startUserRegistration = async (email: string) =>
+  userRepository.create(email).then(user => 
     generateRegistrationOptions({
       rpName,
       rpID,
       userID: numberToUint8(user.id),
-      userName: user.userName,
+      userName: user.email,
       timeout: 60000,
       attestationType: 'direct',
       excludeCredentials: [],
@@ -54,8 +54,8 @@ export const finishUserRegistration = (userToken: string, body: RegistrationResp
     }
   });
 
-export const startUserLogging = (userName: string) => 
-  userRepository.getByUserName(userName).then(user => 
+export const startUserLogging = (email: string) => 
+  userRepository.getByEmail(email).then(user => 
     generateAuthenticationOptions({
       timeout: 60000,
       allowCredentials: [],
