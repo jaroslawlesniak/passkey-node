@@ -49,5 +49,5 @@ export const passkeyLoginFinish: Controller = (req, res) => {
 
       res.status(200).json({ token })}
     )
-    .catch(() => res.status(500).send())
+    // .catch(() => res.status(500).send())
 };
