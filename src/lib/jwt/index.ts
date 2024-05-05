@@ -6,9 +6,9 @@ import jwt from 'jsonwebtoken';
 const secret = 'some secret value';
 const expiresIn = '1d';
 
-export const sign = (userToken: string, challenge: string): Token => 
+export const sign = <T extends object>(userToken: string, payload: T): Token => 
   jwt.sign(
-    { userToken, challenge },
+    { ...payload, userToken },
     secret,
     { expiresIn }
   );
@@ -24,11 +24,4 @@ export const extract = (req: Request) => {
   }
 
   throw new Error('Token is null');
-  // const token = req.cookies['token'];
-
-  // if (token) {
-  //   return validate(token) as any;
-  // }
-
-  // throw new Error('Token is null');
 }

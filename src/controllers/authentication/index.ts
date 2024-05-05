@@ -8,40 +8,46 @@ export const index: Controller = (_, res) => {
 };
 
 export const passkeyRegistrationStart: Controller = (req, res) => {
-  const { userName } = req.body;
+  const { email } = req.body;
 
-  authentication.startUserRegistration(userName).then(({ options, user }) => {
-    const token = sign(user.token, options.challenge);
+  authentication.startUserRegistration(email).then(({ options, user }) => {
+    const token = sign(user.token, { challenge: options.challenge });
 
     return res.status(200).json({ options, token });
   })
-  // .catch(() => res.status(500).send())
+  .catch(() => res.status(500).send())
 };
 
 export const passkeyRegistrationFinish: Controller = (req, res) => {
   const { userToken, challenge } = extract(req);
 
   authentication.finishUserRegistration(userToken, req.body, challenge).then(() => {
-    return res.status(200).send('passkeyRegistrationFinish');
+    const token = sign(userToken, {});
+
+    return res.status(200).json({ token });
   })
-  // .catch(() => res.status(500).send())
+  .catch(() => res.status(500).send())
 };
 
 export const passkeyLoginStart: Controller = (req, res) => {
-  const { userName } = req.body;
+  const { email } = req.body;
 
-  authentication.startUserLogging(userName).then(({ options, user }) => {
-    const token = sign(user.token, options.challenge);
+  authentication.startUserLogging(email).then(({ options, user }) => {
+    const token = sign(user.token, { challenge: options.challenge });
 
     return res.status(200).json({ options, token });
   })
-  // .catch(() => res.status(500).send())
+  .catch(() => res.status(500).send())
 };
 
 export const passkeyLoginFinish: Controller = (req, res) => {
-  const { challenge } = extract(req);
+  const { userToken, challenge } = extract(req);
 
   authentication.finishUserLogging(req.body, challenge)
-    .then(() => res.status(200).send('passkeyLoginFinish'))
-    // .catch(() => res.status(500).send())
+    .then(() => {
+      const token = sign(userToken, {});
+
+      res.status(200).json({ token })}
+    )
+    .catch(() => res.status(500).send())
 };
