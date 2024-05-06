@@ -1,8 +1,26 @@
-import { GenerateAuthenticationOptionsOpts, GenerateRegistrationOptionsOpts, VerifiedAuthenticationResponse, VerifiedRegistrationResponse, VerifyAuthenticationResponseOpts, VerifyRegistrationResponseOpts, generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server"
-import { base64ToUint8Array, numberToUint8 } from "../buffer";
-import { AuthenticationResponseJSON, AuthenticatorDevice, AuthenticatorTransportFuture, RegistrationResponseJSON } from "@simplewebauthn/server/script/deps";
-import { Credential } from "@prisma/client";
+import {
+  GenerateAuthenticationOptionsOpts,
+  GenerateRegistrationOptionsOpts,
+  VerifiedAuthenticationResponse,
+  VerifiedRegistrationResponse,
+  VerifyAuthenticationResponseOpts,
+  VerifyRegistrationResponseOpts,
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse
+} from "@simplewebauthn/server"
+import {
+  AuthenticationResponseJSON,
+  AuthenticatorDevice,
+  AuthenticatorTransportFuture,
+  RegistrationResponseJSON
+} from "@simplewebauthn/server/script/deps";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
+
+import { Credential } from "@prisma/client";
+
+import { base64ToUint8Array, numberToUint8 } from "@/lib/buffer";
 
 const ES256 = -7;
 const RS256 = -257;
@@ -36,7 +54,7 @@ const withVerifyRegistrationDefaults = (response: RegistrationResponseJSON, chal
   requireUserVerification: true,
 })
 
-const liftRegistrationOrThrow = ({ verified, registrationInfo }: VerifiedRegistrationResponse) => {
+const isRegistrationVerified = ({ verified, registrationInfo }: VerifiedRegistrationResponse) => {
   if (verified && registrationInfo) {
     return registrationInfo;
   }
@@ -45,7 +63,7 @@ const liftRegistrationOrThrow = ({ verified, registrationInfo }: VerifiedRegistr
 }
 
 export const verifyRegistration = (body: RegistrationResponseJSON, challenge: string) =>
-  verifyRegistrationResponse(withVerifyRegistrationDefaults(body, challenge)).then(liftRegistrationOrThrow);
+  verifyRegistrationResponse(withVerifyRegistrationDefaults(body, challenge)).then(isRegistrationVerified);
 
 const withStartLoginDefaults = (): GenerateAuthenticationOptionsOpts => ({
   timeout: 60000,
@@ -54,25 +72,34 @@ const withStartLoginDefaults = (): GenerateAuthenticationOptionsOpts => ({
   rpID,
 })
 
-export const startLogin = () => 
+export const startLogin = () =>
   generateAuthenticationOptions(withStartLoginDefaults());
 
-const toAuthenticatorDevice = ({ counter, credentialId, publicKey, transports }: Credential): AuthenticatorDevice => ({
+const toAuthenticatorDevice = ({
+  counter,
+  credentialId,
+  publicKey,
+  transports
+}: Credential): AuthenticatorDevice => ({
   counter,
   credentialID: credentialId,
   credentialPublicKey: base64ToUint8Array(publicKey),
   transports: transports as AuthenticatorTransportFuture[]
-})
+});
 
-const withVerifyLoginDefaults = (response: AuthenticationResponseJSON, expectedChallenge: string, credential: Credential): VerifyAuthenticationResponseOpts => ({
-    response,
-    expectedChallenge,
-    expectedOrigin: origin,
-    expectedRPID: rpID,
-    authenticator: toAuthenticatorDevice(credential),
-})
+const withVerifyLoginDefaults = (
+  response: AuthenticationResponseJSON,
+  expectedChallenge: string,
+  credential: Credential
+): VerifyAuthenticationResponseOpts => ({
+  response,
+  expectedChallenge,
+  expectedOrigin: origin,
+  expectedRPID: rpID,
+  authenticator: toAuthenticatorDevice(credential),
+});
 
-export const fromRawId = (rawId: string) => 
+export const fromRawId = (rawId: string) =>
   isoBase64URL.toBase64(rawId).replace(/=+$/, '').replace(/\+/g, '-'); // what about this?
 
 export const liftCredentialOrThrow = (credential?: Credential) => {
@@ -83,7 +110,7 @@ export const liftCredentialOrThrow = (credential?: Credential) => {
   throw new Error('Credential not found');
 }
 
-const liftVerifyLoginOrThrow = ({ verified, authenticationInfo }: VerifiedAuthenticationResponse) => {
+const isLoginVerified = ({ verified, authenticationInfo }: VerifiedAuthenticationResponse) => {
   if (verified) {
     return { authenticationInfo };
   }
@@ -92,4 +119,4 @@ const liftVerifyLoginOrThrow = ({ verified, authenticationInfo }: VerifiedAuthen
 }
 
 export const verifyLogin = (response: AuthenticationResponseJSON, expectedChallenge: string, credential: Credential) =>
-  verifyAuthenticationResponse(withVerifyLoginDefaults(response, expectedChallenge, credential)).then(liftVerifyLoginOrThrow);
+  verifyAuthenticationResponse(withVerifyLoginDefaults(response, expectedChallenge, credential)).then(isLoginVerified);

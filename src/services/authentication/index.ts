@@ -29,3 +29,6 @@ export const finishUserLogging = async (body: AuthenticationResponseJSON, challe
     .then(credential => verifyLogin(body, challenge, credential)
       .then(({ authenticationInfo }) => credentialRepository.update(credential.id, { counter: authenticationInfo.newCounter }))
     )
+
+export const getUser = (token: string) =>
+  userRepository.getByToken(token);

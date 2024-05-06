@@ -21,12 +21,15 @@ export const passkeyRegistrationStart: Controller = (req, res) => {
 export const passkeyRegistrationFinish: Controller = (req, res) => {
   const { userToken, challenge } = extract(req);
 
-  authentication.finishUserRegistration(userToken, req.body, challenge).then(() => {
-    const token = sign(userToken, {});
+  authentication
+    .finishUserRegistration(userToken, req.body, challenge)
+    .then(() => authentication.getUser(userToken))
+    .then(({ email }) => {
+      const token = sign(userToken, {});
 
-    return res.status(200).json({ token });
-  })
-  .catch(() => res.status(500).send())
+      return res.status(200).json({ token, email });
+    })
+    .catch(() => res.status(500).send())
 };
 
 export const passkeyLoginStart: Controller = (req, res) => {
@@ -43,11 +46,13 @@ export const passkeyLoginStart: Controller = (req, res) => {
 export const passkeyLoginFinish: Controller = (req, res) => {
   const { userToken, challenge } = extract(req);
 
-  authentication.finishUserLogging(req.body, challenge)
-    .then(() => {
+  authentication
+    .finishUserLogging(req.body, challenge)
+    .then(() => authentication.getUser(userToken))
+    .then(({ email }) => {
       const token = sign(userToken, {});
 
-      res.status(200).json({ token })}
+      res.status(200).json({ token, email })}
     )
     .catch(() => res.status(500).send())
 };
