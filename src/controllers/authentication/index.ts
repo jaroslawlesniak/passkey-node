@@ -2,6 +2,7 @@ import { authentication } from "@/services";
 
 import type { Controller } from "../types";
 import { extract, sign } from "@/lib/jwt";
+import { log } from "@/lib/logger";
 
 export const index: Controller = (_, res) => {
   return res.status(200).send('Hello World!');
@@ -15,7 +16,7 @@ export const passkeyRegistrationStart: Controller = (req, res) => {
 
     return res.status(200).json({ options, token });
   })
-  .catch(() => res.status(500).send())
+  .catch(log(() => res.status(500).send()))
 };
 
 export const passkeyRegistrationFinish: Controller = (req, res) => {
@@ -29,7 +30,7 @@ export const passkeyRegistrationFinish: Controller = (req, res) => {
 
       return res.status(200).json({ token, email });
     })
-    .catch(() => res.status(500).send())
+    .catch(log(() => res.status(500).send()))
 };
 
 export const passkeyLoginStart: Controller = (req, res) => {
@@ -40,7 +41,7 @@ export const passkeyLoginStart: Controller = (req, res) => {
 
     return res.status(200).json({ options, token });
   })
-  .catch(() => res.status(500).send())
+  .catch(log(() => res.status(500).send()))
 };
 
 export const passkeyLoginFinish: Controller = (req, res) => {
@@ -54,5 +55,5 @@ export const passkeyLoginFinish: Controller = (req, res) => {
 
       res.status(200).json({ token, email })}
     )
-    .catch(() => res.status(500).send())
+    .catch(log(() => res.status(500).send()))
 };

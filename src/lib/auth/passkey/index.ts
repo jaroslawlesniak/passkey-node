@@ -1,1 +1,2 @@
-export * from './passkey'
+export * from './passkey';
+export * from './types';

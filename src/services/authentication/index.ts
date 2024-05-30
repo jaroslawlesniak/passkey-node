@@ -1,7 +1,6 @@
 import { uint8ArrayToBase64 } from "@/lib/buffer";
 import { credentialRepository, userRepository } from "@/repositories";
-import { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server/script/deps";
-import { fromRawId, startLogin, startRegistration, verifyLogin, verifyRegistration } from "@/lib/auth";
+import { AuthenticationResponseJSON, RegistrationResponseJSON, fromRawId, startLogin, startRegistration, verifyLogin, verifyRegistration } from "@/lib/auth";
 
 export const startUserRegistration = async (email: string) =>
   userRepository.create(email).then(user =>

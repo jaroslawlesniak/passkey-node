@@ -1,11 +1,9 @@
 import {
-  GenerateAuthenticationOptionsOpts,
   GenerateRegistrationOptionsOpts,
   VerifiedAuthenticationResponse,
   VerifiedRegistrationResponse,
   VerifyAuthenticationResponseOpts,
   VerifyRegistrationResponseOpts,
-  generateAuthenticationOptions,
   generateRegistrationOptions,
   verifyAuthenticationResponse,
   verifyRegistrationResponse
@@ -21,13 +19,8 @@ import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { Credential } from "@prisma/client";
 
 import { base64ToUint8Array, numberToUint8 } from "@/lib/buffer";
-
-const ES256 = -7;
-const RS256 = -257;
-
-const rpName: string = 'Passkeys Tutorial';
-const rpID: string = 'localhost';
-const origin: string = `http://${rpID}:5173`;
+import { ES256, RS256, rpID, rpName } from "./config";
+import { generateAuthenticationOptions } from "./authentication";
 
 const withStartRegistrationDefaults = (userId: number, email: string): GenerateRegistrationOptionsOpts => ({
   rpName,
@@ -65,15 +58,8 @@ const isRegistrationVerified = ({ verified, registrationInfo }: VerifiedRegistra
 export const verifyRegistration = (body: RegistrationResponseJSON, challenge: string) =>
   verifyRegistrationResponse(withVerifyRegistrationDefaults(body, challenge)).then(isRegistrationVerified);
 
-const withStartLoginDefaults = (): GenerateAuthenticationOptionsOpts => ({
-  timeout: 60000,
-  allowCredentials: [],
-  userVerification: 'required',
-  rpID,
-})
-
 export const startLogin = () =>
-  generateAuthenticationOptions(withStartLoginDefaults());
+  generateAuthenticationOptions();
 
 const toAuthenticatorDevice = ({
   counter,
@@ -102,7 +88,7 @@ const withVerifyLoginDefaults = (
 export const fromRawId = (rawId: string) =>
   isoBase64URL.toBase64(rawId).replace(/=+$/, '').replace(/\+/g, '-'); // what about this?
 
-export const liftCredentialOrThrow = (credential?: Credential) => {
+export const liftCredentialOrThrow = (credential?: Credential): Credential => {
   if (credential) {
     return credential;
   }
