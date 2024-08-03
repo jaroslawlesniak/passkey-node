@@ -19,7 +19,7 @@ import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { Credential } from "@prisma/client";
 
 import { base64ToUint8Array, numberToUint8 } from "@/lib/buffer";
-import { ES256, RS256, rpID, rpName } from "./config";
+import { ES256, RS256, origin, rpID, rpName } from "./config";
 import { generateAuthenticationOptions } from "./authentication";
 
 const withStartRegistrationDefaults = (userId: number, email: string): GenerateRegistrationOptionsOpts => ({
