@@ -24,7 +24,7 @@ const withStartRegistrationDefaults = (userId: number, email: string): GenerateR
   rpID,
   userID: toBuffer(userId.toString(10), 'base64'),
   userName: email,
-  timeout: 60000,
+  timeout: 60_000,
   attestationType: 'direct',
   excludeCredentials: [],
   authenticatorSelection: {
@@ -81,8 +81,6 @@ const withVerifyLoginDefaults = (
   expectedRPID: rpID,
   authenticator: toAuthenticatorDevice(credential),
 });
-
-export const fromRawId = (rawId: string) => rawId
 
 const isLoginVerified = ({ verified, authenticationInfo }: VerifiedAuthenticationResponse) => {
   if (verified) {
