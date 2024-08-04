@@ -2,10 +2,8 @@ import {
   GenerateRegistrationOptionsOpts,
   VerifiedAuthenticationResponse,
   VerifiedRegistrationResponse,
-  VerifyAuthenticationResponseOpts,
   VerifyRegistrationResponseOpts,
   generateRegistrationOptions,
-  verifyAuthenticationResponse,
   verifyRegistrationResponse
 } from "@simplewebauthn/server"
 import {
@@ -14,18 +12,18 @@ import {
   AuthenticatorTransportFuture,
   RegistrationResponseJSON
 } from "@simplewebauthn/server/script/deps";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 import { Credential } from "@prisma/client";
 
-import { base64ToUint8Array, numberToUint8 } from "@/lib/buffer";
 import { ES256, RS256, origin, rpID, rpName } from "./config";
-import { generateAuthenticationOptions } from "./authentication";
+import { generateAuthenticationOptions, verifyAuthenticationResponse } from "./authentication";
+import { VerifyAuthenticationResponseOpts } from "./types";
+import { toBase64, toBuffer } from "@/lib/base64";
 
 const withStartRegistrationDefaults = (userId: number, email: string): GenerateRegistrationOptionsOpts => ({
   rpName,
   rpID,
-  userID: numberToUint8(userId),
+  userID: toBuffer(userId.toString(10), 'base64'),
   userName: email,
   timeout: 60000,
   attestationType: 'direct',
@@ -69,7 +67,7 @@ const toAuthenticatorDevice = ({
 }: Credential): AuthenticatorDevice => ({
   counter,
   credentialID: credentialId,
-  credentialPublicKey: base64ToUint8Array(publicKey),
+  credentialPublicKey: toBuffer(publicKey, 'base64'),
   transports: transports as AuthenticatorTransportFuture[]
 });
 
@@ -85,16 +83,7 @@ const withVerifyLoginDefaults = (
   authenticator: toAuthenticatorDevice(credential),
 });
 
-export const fromRawId = (rawId: string) =>
-  isoBase64URL.toBase64(rawId).replace(/=+$/, '').replace(/\+/g, '-'); // what about this?
-
-export const liftCredentialOrThrow = (credential?: Credential): Credential => {
-  if (credential) {
-    return credential;
-  }
-
-  throw new Error('Credential not found');
-}
+export const fromRawId = (rawId: string) => rawId
 
 const isLoginVerified = ({ verified, authenticationInfo }: VerifiedAuthenticationResponse) => {
   if (verified) {

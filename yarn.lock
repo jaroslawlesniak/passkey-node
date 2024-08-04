@@ -9,7 +9,7 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@hexagon/base64@^1.1.27":
+"@hexagon/base64@^1.1.27", "@hexagon/base64@^1.1.28":
   version "1.1.28"
   resolved "https://registry.yarnpkg.com/@hexagon/base64/-/base64-1.1.28.tgz#7d306a97f1423829be5b27c9d388fe50e3099d48"
   integrity sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==
@@ -46,6 +46,25 @@
     asn1js "^3.0.5"
     tslib "^2.6.2"
 
+"@peculiar/asn1-android@^2.3.13":
+  version "2.3.13"
+  resolved "https://registry.yarnpkg.com/@peculiar/asn1-android/-/asn1-android-2.3.13.tgz#7c5fe42b5f11b4266a40d676476cec9df4ff56f2"
+  integrity sha512-0VTNazDGKrLS6a3BwTDZanqq6DR/I3SbvmDMuS8Be+OYpvM6x1SRDh9AGDsHVnaCOIztOspCPc6N1m+iUv1Xxw==
+  dependencies:
+    "@peculiar/asn1-schema" "^2.3.13"
+    asn1js "^3.0.5"
+    tslib "^2.6.2"
+
+"@peculiar/asn1-ecc@^2.3.13":
+  version "2.3.13"
+  resolved "https://registry.yarnpkg.com/@peculiar/asn1-ecc/-/asn1-ecc-2.3.13.tgz#0b1f526159c87bef71102da97921773b64172c52"
+  integrity sha512-3dF2pQcrN/WJEMq+9qWLQ0gqtn1G81J4rYqFl6El6QV367b4IuhcRv+yMA84tNNyHOJn9anLXV5radnpPiG3iA==
+  dependencies:
+    "@peculiar/asn1-schema" "^2.3.13"
+    "@peculiar/asn1-x509" "^2.3.13"
+    asn1js "^3.0.5"
+    tslib "^2.6.2"
+
 "@peculiar/asn1-ecc@^2.3.8":
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/@peculiar/asn1-ecc/-/asn1-ecc-2.3.8.tgz#6b1a18f64f221ae862c1038bb125fbf4342918a0"
@@ -53,6 +72,16 @@
   dependencies:
     "@peculiar/asn1-schema" "^2.3.8"
     "@peculiar/asn1-x509" "^2.3.8"
+    asn1js "^3.0.5"
+    tslib "^2.6.2"
+
+"@peculiar/asn1-rsa@^2.3.13":
+  version "2.3.13"
+  resolved "https://registry.yarnpkg.com/@peculiar/asn1-rsa/-/asn1-rsa-2.3.13.tgz#e9630a2a976bde5dfaca969906f684dffce13039"
+  integrity sha512-wBNQqCyRtmqvXkGkL4DR3WxZhHy8fDiYtOjTeCd7SFE5F6GBeafw3EJ94PX/V0OJJrjQ40SkRY2IZu3ZSyBqcg==
+  dependencies:
+    "@peculiar/asn1-schema" "^2.3.13"
+    "@peculiar/asn1-x509" "^2.3.13"
     asn1js "^3.0.5"
     tslib "^2.6.2"
 
@@ -66,12 +95,32 @@
     asn1js "^3.0.5"
     tslib "^2.6.2"
 
+"@peculiar/asn1-schema@^2.3.13":
+  version "2.3.13"
+  resolved "https://registry.yarnpkg.com/@peculiar/asn1-schema/-/asn1-schema-2.3.13.tgz#ec8509cdcbc0da3abe73fd7e690556b57a61b8f4"
+  integrity sha512-3Xq3a01WkHRZL8X04Zsfg//mGaA21xlL4tlVn4v2xGT0JStiztATRkMwa5b+f/HXmY2smsiLXYK46Gwgzvfg3g==
+  dependencies:
+    asn1js "^3.0.5"
+    pvtsutils "^1.3.5"
+    tslib "^2.6.2"
+
 "@peculiar/asn1-schema@^2.3.8":
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/@peculiar/asn1-schema/-/asn1-schema-2.3.8.tgz#04b38832a814e25731232dd5be883460a156da3b"
   integrity sha512-ULB1XqHKx1WBU/tTFIA+uARuRoBVZ4pNdOA878RDrRbBfBGcSzi5HBkdScC6ZbHn8z7L8gmKCgPC1LHRrP46tA==
   dependencies:
     asn1js "^3.0.5"
+    pvtsutils "^1.3.5"
+    tslib "^2.6.2"
+
+"@peculiar/asn1-x509@^2.3.13":
+  version "2.3.13"
+  resolved "https://registry.yarnpkg.com/@peculiar/asn1-x509/-/asn1-x509-2.3.13.tgz#3616fb879b61f1f161a61660ca92f6fe4107af7a"
+  integrity sha512-PfeLQl2skXmxX2/AFFCVaWU8U6FKW1Db43mgBhShCOFS1bVxqtvusq1hVjfuEcuSQGedrLdCSvTgabluwN/M9A==
+  dependencies:
+    "@peculiar/asn1-schema" "^2.3.13"
+    asn1js "^3.0.5"
+    ipaddr.js "^2.1.0"
     pvtsutils "^1.3.5"
     tslib "^2.6.2"
 

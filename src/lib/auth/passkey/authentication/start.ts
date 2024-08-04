@@ -1,4 +1,4 @@
-import { uint8ArrayToBase64 } from "@/lib/buffer";
+import { fromBuffer } from "@/lib/base64";
 import { rpId } from "../config";
 import { PublicKeyCredentialRequestOptionsJSON } from "../types";
 import { generateChallenge } from "./native";
@@ -6,14 +6,14 @@ import { generateChallenge } from "./native";
 const defaults: Partial<PublicKeyCredentialRequestOptionsJSON> = {
   rpId,
   timeout: 60000,
-  allowCredentials: [], // not yest supported
+  allowCredentials: [], // not yet supported
   userVerification: 'required',
   extensions: {},
 };
 
 const toPublicKeyCredentialRequest = (challenge: Uint8Array): PublicKeyCredentialRequestOptionsJSON => ({
   ...defaults,
-  challenge: uint8ArrayToBase64(challenge),
+  challenge: fromBuffer(challenge, 'base64url'),
 })
 
 /**

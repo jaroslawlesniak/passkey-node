@@ -1,6 +1,6 @@
-import { uint8ArrayToBase64 } from "@/lib/buffer";
 import { credentialRepository, userRepository } from "@/repositories";
-import { AuthenticationResponseJSON, RegistrationResponseJSON, fromRawId, startLogin, startRegistration, verifyLogin, verifyRegistration } from "@/lib/auth";
+import { AuthenticationResponseJSON, RegistrationResponseJSON, startLogin, startRegistration, verifyLogin, verifyRegistration } from "@/lib/auth";
+import { fromBuffer } from "@/lib/base64";
 
 export const startUserRegistration = async (email: string) =>
   userRepository.create(email).then(user =>
@@ -14,7 +14,7 @@ export const finishUserRegistration = (userToken: string, body: RegistrationResp
         .then(user => credentialRepository.create({
           counter,
           credentialId: credentialID,
-          publicKey: uint8ArrayToBase64(credentialPublicKey),
+          publicKey: fromBuffer(credentialPublicKey, 'base64'),
           transports: body.response.transports || [],
           userId: user.id,
         })));
@@ -24,7 +24,7 @@ export const startUserLogging = (email: string) =>
     startLogin().then(options => ({ user, options })));
 
 export const finishUserLogging = async (body: AuthenticationResponseJSON, challenge: string) =>
-  credentialRepository.getByCredentialId(fromRawId(body.rawId))
+  credentialRepository.getByCredentialId(body.rawId)
     .then(credential => verifyLogin(body, challenge, credential)
       .then(({ authenticationInfo }) => credentialRepository.update(credential.id, { counter: authenticationInfo.newCounter }))
     )

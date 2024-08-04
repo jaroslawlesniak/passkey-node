@@ -713,3 +713,157 @@ export type GenerateAuthenticationOptionsOpts = {
   userVerification?: UserVerificationRequirement;
   extensions?: AuthenticationExtensionsClientInputs;
 };
+
+export type VerifyAuthenticationResponseOpts = {
+  response: AuthenticationResponseJSON;
+  expectedChallenge: string | ((challenge: string) => boolean | Promise<boolean>);
+  expectedOrigin: string | string[];
+  expectedRPID: string | string[];
+  authenticator: AuthenticatorDevice;
+  expectedType?: string | string[];
+  requireUserVerification?: boolean;
+  advancedFIDOConfig?: {
+    userVerification?: UserVerificationRequirement;
+  };
+};
+
+export type DevicePublicKeyAuthenticatorOutput = {
+  dpk?: Uint8Array;
+  sig?: string;
+  nonce?: Uint8Array;
+  scope?: Uint8Array;
+  aaguid?: Uint8Array;
+};
+export type UVMAuthenticatorOutput = {
+  uvm?: Uint8Array[];
+};
+
+export type AuthenticationExtensionsAuthenticatorOutputs = {
+  devicePubKey?: DevicePublicKeyAuthenticatorOutput;
+  uvm?: UVMAuthenticatorOutput;
+};
+
+/**
+ * Result of authentication verification
+ *
+ * @param verified If the authentication response could be verified
+ * @param authenticationInfo.credentialID The ID of the authenticator used during authentication.
+ * Should be used to identify which DB authenticator entry needs its `counter` updated to the value
+ * below
+ * @param authenticationInfo.newCounter The number of times the authenticator identified above
+ * reported it has been used. **Should be kept in a DB for later reference to help prevent replay
+ * attacks!**
+ * @param authenticationInfo.credentialDeviceType Whether this is a single-device or multi-device
+ * credential. **Should be kept in a DB for later reference!**
+ * @param authenticationInfo.credentialBackedUp Whether or not the multi-device credential has been
+ * backed up. Always `false` for single-device credentials. **Should be kept in a DB for later
+ * reference!**
+ * @param authenticationInfo.origin The origin of the website that the authentication occurred on
+ * @param authenticationInfo.rpID The RP ID that the authentication occurred on
+ * @param authenticationInfo?.authenticatorExtensionResults The authenticator extensions returned
+ * by the browser
+ */
+export type VerifiedAuthenticationResponse = {
+  verified: boolean;
+  authenticationInfo: {
+    credentialID: Base64URLString;
+    newCounter: number;
+    userVerified: boolean;
+    credentialDeviceType: CredentialDeviceType;
+    credentialBackedUp: boolean;
+    origin: string;
+    rpID: string;
+    authenticatorExtensionResults?: AuthenticationExtensionsAuthenticatorOutputs;
+  };
+};
+
+export type ClientDataJSON = {
+  type: string;
+  challenge: string;
+  origin: string;
+  crossOrigin?: boolean;
+  tokenBinding?: {
+    id?: string;
+    status: 'present' | 'supported' | 'not-supported';
+  };
+};
+
+export type ParsedAuthenticatorData = {
+  rpIdHash: Uint8Array;
+  flagsBuf: Uint8Array;
+  flags: {
+    up: boolean;
+    uv: boolean;
+    be: boolean;
+    bs: boolean;
+    at: boolean;
+    ed: boolean;
+    flagsInt: number;
+  };
+  counter: number;
+  counterBuf: Uint8Array;
+  aaguid?: Uint8Array;
+  credentialID?: Uint8Array;
+  credentialPublicKey?: Uint8Array;
+  extensionsData?: AuthenticationExtensionsAuthenticatorOutputs;
+  extensionsDataBuffer?: Uint8Array;
+};
+
+/**
+ * Fundamental values that are needed to discern the more specific COSE public key types below.
+ *
+ * The use of `Maps` here is due to CBOR encoding being used with public keys, and the CBOR "Map"
+ * type is being decoded to JavaScript's `Map` type instead of, say, a basic Object as us JS
+ * developers might prefer.
+ *
+ * These types are an unorthodox way of saying "these Maps should involve these discrete lists of
+ * keys", but it works.
+ */
+/**
+ * COSE Keys
+ *
+ * https://www.iana.org/assignments/cose/cose.xhtml#key-common-parameters
+ * https://www.iana.org/assignments/cose/cose.xhtml#key-type-parameters
+ */
+export declare enum COSEKTY {
+  OKP = 1,
+  EC2 = 2,
+  RSA = 3
+}
+
+export declare enum COSEKEYS {
+  kty = 1,
+  alg = 3,
+  crv = -1,
+  x = -2,
+  y = -3,
+  n = -1,
+  e = -2
+}
+
+/**
+ * COSE Algorithms
+ *
+ * https://www.iana.org/assignments/cose/cose.xhtml#algorithms
+ */
+export declare enum COSEALG {
+  ES256 = -7,
+  EdDSA = -8,
+  ES384 = -35,
+  ES512 = -36,
+  PS256 = -37,
+  PS384 = -38,
+  PS512 = -39,
+  ES256K = -47,
+  RS256 = -257,
+  RS384 = -258,
+  RS512 = -259,
+  RS1 = -65535
+}
+
+export type COSEPublicKey = {
+  get(key: COSEKEYS.kty): COSEKTY | undefined;
+  get(key: COSEKEYS.alg): COSEALG | undefined;
+  set(key: COSEKEYS.kty, value: COSEKTY): void;
+  set(key: COSEKEYS.alg, value: COSEALG): void;
+};
