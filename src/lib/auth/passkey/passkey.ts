@@ -1,9 +1,7 @@
 import {
-  GenerateRegistrationOptionsOpts,
   VerifiedAuthenticationResponse,
   VerifiedRegistrationResponse,
   VerifyRegistrationResponseOpts,
-  generateRegistrationOptions,
   verifyRegistrationResponse
 } from "@simplewebauthn/server"
 import {
@@ -17,8 +15,9 @@ import { Credential } from "@prisma/client";
 
 import { ES256, RS256, origin, rpID, rpName } from "./config";
 import { generateAuthenticationOptions, verifyAuthenticationResponse } from "./authentication";
-import { VerifyAuthenticationResponseOpts } from "./types";
+import { GenerateRegistrationOptionsOpts, VerifyAuthenticationResponseOpts } from "./types";
 import { toBuffer } from "@/lib/base64";
+import { generateRegistrationOptions } from "./registration";
 
 const withStartRegistrationDefaults = (userId: number, email: string): GenerateRegistrationOptionsOpts => ({
   rpName,

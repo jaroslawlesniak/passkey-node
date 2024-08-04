@@ -1,7 +1,7 @@
 import { fromBuffer } from "@/lib/base64";
 import { rpId } from "../config";
 import { PublicKeyCredentialRequestOptionsJSON } from "../types";
-import { generateChallenge } from "./native";
+import { generateChallenge } from "../native";
 
 const defaults: Partial<PublicKeyCredentialRequestOptionsJSON> = {
   rpId,
@@ -14,7 +14,7 @@ const defaults: Partial<PublicKeyCredentialRequestOptionsJSON> = {
 const toPublicKeyCredentialRequest = (challenge: Uint8Array): PublicKeyCredentialRequestOptionsJSON => ({
   ...defaults,
   challenge: fromBuffer(challenge, 'base64url'),
-})
+});
 
 /**
  * Prepare a value to pass into navigator.credentials.get(...) for authenticator authentication

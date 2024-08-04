@@ -917,3 +917,21 @@ export type SubtleCryptoKeyAlgName =
   | 'Ed25519'
   | 'RSASSA-PKCS1-v1_5'
   | 'RSA-PSS';
+
+export type GenerateRegistrationOptionsOpts = {
+  rpName: string;
+  rpID: string;
+  userName: string;
+  userID?: Uint8Array;
+  challenge?: string | Uint8Array;
+  userDisplayName?: string;
+  timeout?: number;
+  attestationType?: AttestationConveyancePreference;
+  excludeCredentials?: {
+    id: Base64URLString;
+    transports?: AuthenticatorTransportFuture[];
+  }[];
+  authenticatorSelection?: AuthenticatorSelectionCriteria;
+  extensions?: AuthenticationExtensionsClientInputs;
+  supportedAlgorithmIDs?: COSEAlgorithmIdentifier[];
+};
