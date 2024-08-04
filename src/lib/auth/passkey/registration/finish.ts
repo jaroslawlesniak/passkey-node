@@ -32,7 +32,7 @@ export function decodeAttestationObject(
  *
  * **Options:**
  *
- * @param response - Response returned by **@simplewebauthn/browser**'s `startAuthentication()`
+ * @param response - Response returned by `startAuthentication()`
  * @param expectedChallenge - The base64url-encoded `options.challenge` returned by `generateRegistrationOptions()`
  * @param expectedOrigin - Website URL (or array of URLs) that the registration should have occurred on
  * @param expectedRPID - RP ID (or array of IDs) that was specified in the registration options
