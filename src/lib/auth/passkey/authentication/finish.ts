@@ -1,11 +1,9 @@
 import { isBase64URL, toBuffer, toUTF8String } from "@/lib/base64";
-import { AuthenticationExtensionsAuthenticatorOutputs, Base64URLString, ClientDataJSON, COSEALG, COSEKEYS, COSEKTY, COSEPublicKey, CredentialDeviceType, ParsedAuthenticatorData, VerifiedAuthenticationResponse, VerifyAuthenticationResponseOpts } from "../types";
+import { AuthenticationExtensionsAuthenticatorOutputs, Base64URLString, ClientDataJSON, COSEALG, COSECRV, COSEKEYS, COSEKTY, COSEPublicKey, COSEPublicKeyEC2, COSEPublicKeyRSA, CredentialDeviceType, ParsedAuthenticatorData, VerifiedAuthenticationResponse, VerifyAuthenticationResponseOpts } from "../types";
 import { areEqual, concat, fromASCIIString, fromHex, fromUTF8String, toDataView } from "@/lib/uint";
 import { decodeFirst, encode } from "@/lib/cbor";
 import { digest, verify } from "@/lib/crypto";
 import { AsnParser, Certificate, ECParameters, id_ecPublicKey, id_secp256r1, id_secp384r1, RSAPublicKey } from '@/lib/asn'
-import { COSECRV } from "@/lib/crypto/types";
-import { COSEPublicKeyEC2, COSEPublicKeyRSA } from "@/lib/cose/types";
 
 /**
  * Make sense of Bits 3 and 4 in authenticator indicating:

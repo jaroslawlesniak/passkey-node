@@ -825,13 +825,13 @@ export type ParsedAuthenticatorData = {
  * https://www.iana.org/assignments/cose/cose.xhtml#key-common-parameters
  * https://www.iana.org/assignments/cose/cose.xhtml#key-type-parameters
  */
-export declare enum COSEKTY {
+export enum COSEKTY {
   OKP = 1,
   EC2 = 2,
   RSA = 3
 }
 
-export declare enum COSEKEYS {
+export enum COSEKEYS {
   kty = 1,
   alg = 3,
   crv = -1,
@@ -846,7 +846,7 @@ export declare enum COSEKEYS {
  *
  * https://www.iana.org/assignments/cose/cose.xhtml#algorithms
  */
-export declare enum COSEALG {
+export enum COSEALG {
   ES256 = -7,
   EdDSA = -8,
   ES384 = -35,
@@ -867,3 +867,53 @@ export type COSEPublicKey = {
   set(key: COSEKEYS.kty, value: COSEKTY): void;
   set(key: COSEKEYS.alg, value: COSEALG): void;
 };
+
+/**
+ * COSE Curves
+ *
+ * https://www.iana.org/assignments/cose/cose.xhtml#elliptic-curves
+ */
+export enum COSECRV {
+  P256 = 1,
+  P384 = 2,
+  P521 = 3,
+  ED25519 = 6,
+  SECP256K1 = 8,
+}
+
+export type COSEPublicKeyOKP = COSEPublicKey & {
+  // Getters
+  get(key: COSEKEYS.crv): number | undefined;
+  get(key: COSEKEYS.x): Uint8Array | undefined;
+  // Setters
+  set(key: COSEKEYS.crv, value: number): void;
+  set(key: COSEKEYS.x, value: Uint8Array): void;
+};
+
+export type COSEPublicKeyEC2 = COSEPublicKey & {
+  // Getters
+  get(key: COSEKEYS.crv): number | undefined;
+  get(key: COSEKEYS.x): Uint8Array | undefined;
+  get(key: COSEKEYS.y): Uint8Array | undefined;
+  // Setters
+  set(key: COSEKEYS.crv, value: number): void;
+  set(key: COSEKEYS.x, value: Uint8Array): void;
+  set(key: COSEKEYS.y, value: Uint8Array): void;
+};
+
+export type COSEPublicKeyRSA = COSEPublicKey & {
+  // Getters
+  get(key: COSEKEYS.n): Uint8Array | undefined;
+  get(key: COSEKEYS.e): Uint8Array | undefined;
+  // Setters
+  set(key: COSEKEYS.n, value: Uint8Array): void;
+  set(key: COSEKEYS.e, value: Uint8Array): void;
+};
+
+export type SubtleCryptoAlg = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512';
+export type SubtleCryptoCrv = 'P-256' | 'P-384' | 'P-521' | 'Ed25519';
+export type SubtleCryptoKeyAlgName =
+  | 'ECDSA'
+  | 'Ed25519'
+  | 'RSASSA-PKCS1-v1_5'
+  | 'RSA-PSS';

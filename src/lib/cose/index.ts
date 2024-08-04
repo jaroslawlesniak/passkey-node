@@ -1,5 +1,4 @@
-import { COSEALG, COSEKEYS, COSEKTY, COSEPublicKey } from "../auth";
-import { COSECRV, COSEPublicKeyEC2, COSEPublicKeyOKP, COSEPublicKeyRSA } from "./types";
+import { COSEALG, COSECRV, COSEKEYS, COSEKTY, COSEPublicKey, COSEPublicKeyEC2, COSEPublicKeyOKP, COSEPublicKeyRSA } from "@/lib/auth";
 
 
 export function isCOSEPublicKeyOKP(

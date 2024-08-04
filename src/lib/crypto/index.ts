@@ -1,10 +1,8 @@
-import { COSEALG, COSEKEYS, COSEPublicKey } from "@/lib/auth";
-import { COSECRV, SubtleCryptoAlg, SubtleCryptoCrv, SubtleCryptoKeyAlgName } from "./types";
 import { concat } from "@/lib/uint";
 import { AsnParser, ECDSASigValue } from '@/lib/asn'
 import { isCOSEAlg, isCOSECrv, isCOSEPublicKeyEC2, isCOSEPublicKeyOKP, isCOSEPublicKeyRSA } from "@/lib/cose";
-import { COSEPublicKeyEC2, COSEPublicKeyOKP, COSEPublicKeyRSA } from "../cose/types";
-import { fromBuffer } from "../base64";
+import { fromBuffer } from "@/lib/base64";
+import { COSEALG, COSECRV, COSEKEYS, COSEPublicKey, COSEPublicKeyEC2, COSEPublicKeyOKP, COSEPublicKeyRSA, SubtleCryptoAlg, SubtleCryptoCrv, SubtleCryptoKeyAlgName } from "@/lib/auth";
 
 let webCrypto: Crypto | undefined = undefined;
 
