@@ -1,4 +1,16 @@
 import {
+  AsnParser,
+  Certificate,
+  ECParameters,
+  id_ecPublicKey,
+  id_secp256r1,
+  id_secp384r1,
+  RSAPublicKey,
+} from "@/lib/asn";
+import { decodeFirst, encode } from "@/lib/cbor";
+import { digest, verify } from "@/lib/crypto";
+import {} from "@/lib/crypto";
+import {
   areEqual,
   fromASCIIString,
   fromHex,
@@ -6,6 +18,7 @@ import {
   toDataView,
   toHex,
 } from "@/lib/uint";
+
 import {
   AuthenticationExtensionsAuthenticatorOutputs,
   COSEALG,
@@ -18,18 +31,6 @@ import {
   CredentialDeviceType,
   ParsedAuthenticatorData,
 } from "./types";
-import { decodeFirst, encode } from "@/lib/cbor";
-import { digest, verify } from "@/lib/crypto";
-import {} from "@/lib/crypto";
-import {
-  AsnParser,
-  Certificate,
-  ECParameters,
-  id_ecPublicKey,
-  id_secp256r1,
-  id_secp384r1,
-  RSAPublicKey,
-} from "@/lib/asn";
 
 /**
  * CBOR-encoded extensions can be deeply-nested Maps, which are too deep for a simple

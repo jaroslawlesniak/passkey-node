@@ -1,4 +1,3 @@
-import { credentialRepository, userRepository } from "@/repositories";
 import {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
@@ -8,6 +7,7 @@ import {
   verifyRegistration,
 } from "@/lib/auth";
 import { fromBuffer } from "@/lib/base64";
+import { credentialRepository, userRepository } from "@/repositories";
 
 export const startUserRegistration = async (email: string) =>
   userRepository

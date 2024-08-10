@@ -1,7 +1,8 @@
 import { fromBuffer } from "@/lib/base64";
+
 import { rpId } from "../config";
-import { PublicKeyCredentialRequestOptionsJSON } from "../types";
 import { generateChallenge } from "../native";
+import { PublicKeyCredentialRequestOptionsJSON } from "../types";
 
 const defaults: Partial<PublicKeyCredentialRequestOptionsJSON> = {
   rpId,

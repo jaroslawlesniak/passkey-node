@@ -1,10 +1,16 @@
 import { Credential } from "@prisma/client";
 
-import { ES256, RS256, origin, rpID, rpName } from "./config";
+import { toBuffer } from "@/lib/base64";
+
 import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from "./authentication";
+import { ES256, origin, rpID, rpName, RS256 } from "./config";
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+} from "./registration";
 import {
   AuthenticationResponseJSON,
   AuthenticatorDevice,
@@ -16,11 +22,6 @@ import {
   VerifyAuthenticationResponseOpts,
   VerifyRegistrationResponseOpts,
 } from "./types";
-import { toBuffer } from "@/lib/base64";
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-} from "./registration";
 
 const withStartRegistrationDefaults = (
   userId: number,

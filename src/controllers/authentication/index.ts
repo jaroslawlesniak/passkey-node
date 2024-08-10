@@ -1,8 +1,8 @@
+import { extract, sign } from "@/lib/jwt";
+import { log } from "@/lib/logger";
 import { authentication } from "@/services";
 
 import type { Controller } from "../types";
-import { extract, sign } from "@/lib/jwt";
-import { log } from "@/lib/logger";
 
 export const index: Controller = (_, res) => {
   return res.status(200).send("Hello World!");

@@ -1,4 +1,6 @@
 import { fromBuffer, toBuffer, toUTF8String } from "@/lib/base64";
+import { decodeFirst } from "@/lib/cbor";
+
 import {
   AttestationFormatVerifierOpts,
   AttestationObject,
@@ -8,8 +10,6 @@ import {
   VerifiedRegistrationResponse,
   VerifyRegistrationResponseOpts,
 } from "../types";
-import { supportedCOSEAlgorithmIdentifiers } from "./algorithms";
-import { decodeFirst } from "@/lib/cbor";
 import {
   convertAAGUIDToString,
   decodeCredentialPublicKey,
@@ -18,6 +18,8 @@ import {
   parseBackupFlags,
   toHash,
 } from "../utils";
+import { supportedCOSEAlgorithmIdentifiers } from "./algorithms";
+import { SettingsService } from "./services";
 import {
   verifyAttestationAndroidKey,
   verifyAttestationAndroidSafetyNet,
@@ -26,7 +28,6 @@ import {
   verifyAttestationPacked,
   verifyAttestationTPM,
 } from "./verifications";
-import { SettingsService } from "./services";
 
 /**
  * Decode an authenticator's base64url-encoded clientDataJSON to JSON

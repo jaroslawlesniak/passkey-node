@@ -1,8 +1,7 @@
 import { uuid } from "@/lib/uuid";
 
-import type { CreatePayload, UpdatePayload } from "./types";
-
 import { prisma } from "../client";
+import type { CreatePayload, UpdatePayload } from "./types";
 
 export const create = ({
   counter,

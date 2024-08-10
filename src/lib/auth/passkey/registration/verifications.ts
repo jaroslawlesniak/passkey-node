@@ -1,4 +1,25 @@
 import {
+  AsnParser,
+  Certificate,
+  ExtendedKeyUsage,
+  id_ce_extKeyUsage,
+  id_ce_keyDescription,
+  id_ce_subjectAltName,
+  KeyDescription,
+  Name,
+  SubjectAlternativeName,
+} from "@/lib/asn";
+import {
+  fromBuffer,
+  isBase64,
+  isBase64URL,
+  toBase64,
+  toBuffer,
+} from "@/lib/base64";
+import * as base64 from "@/lib/base64";
+import { decodeFirst } from "@/lib/cbor";
+import { isCOSEAlg, isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "@/lib/cose";
+import {
   areEqual,
   concat,
   fromUTF8String,
@@ -6,6 +27,7 @@ import {
   toHex,
   toUTF8String,
 } from "@/lib/uint";
+
 import {
   AttestationFormatVerifierOpts,
   Base64URLString,
@@ -20,40 +42,18 @@ import {
   SafetyNetJWTSignature,
 } from "../types";
 import { decodeCredentialPublicKey, toHash, verifySignature } from "../utils";
-import { decodeFirst } from "@/lib/cbor";
 import {
   getCertificateInfo,
   parseCertInfo,
   validateCertificatePath,
 } from "./certificates";
 import {
-  fromBuffer,
-  isBase64,
-  isBase64URL,
-  toBase64,
-  toBuffer,
-} from "@/lib/base64";
-import { isCOSEAlg, isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "@/lib/cose";
-import { verifyAttestationWithMetadata } from "./metadata";
-import {
-  AsnParser,
-  Certificate,
-  ExtendedKeyUsage,
-  id_ce_extKeyUsage,
-  id_ce_keyDescription,
-  id_ce_subjectAltName,
-  KeyDescription,
-  Name,
-  SubjectAlternativeName,
-} from "@/lib/asn";
-
-import * as base64 from "@/lib/base64";
-import {
   TPM_ALG,
   TPM_ECC_CURVE,
   TPM_ECC_CURVE_COSE_CRV_MAP,
   TPM_MANUFACTURERS,
 } from "./constants";
+import { verifyAttestationWithMetadata } from "./metadata";
 import { MetadataService } from "./services";
 
 /**

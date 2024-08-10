@@ -1,4 +1,5 @@
 import base64 from "@hexagon/base64";
+
 import type { Base64URLString } from "../auth";
 
 /**

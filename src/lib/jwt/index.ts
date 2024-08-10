@@ -1,7 +1,7 @@
 import { Request } from "express";
+import jwt from "jsonwebtoken";
 
 import { Token, TokenPayload } from "./types";
-import jwt from "jsonwebtoken";
 
 const secret = "some secret value";
 const expiresIn = "1d";

@@ -1,4 +1,8 @@
+import { toBuffer, toUTF8String } from "@/lib/base64";
 import { isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "@/lib/cose";
+import { verifyEC2, verifyRSA } from "@/lib/crypto";
+import { fromUTF8String } from "@/lib/uint";
+
 import {
   AlgSign,
   Base64URLString,
@@ -12,11 +16,8 @@ import {
   convertX509PublicKeyToCOSE,
   decodeCredentialPublicKey,
 } from "../utils";
-import { convertCertBufferToPEM } from "./verifications";
 import { validateCertificatePath } from "./certificates";
-import { toBuffer, toUTF8String } from "@/lib/base64";
-import { fromUTF8String } from "@/lib/uint";
-import { verifyEC2, verifyRSA } from "@/lib/crypto";
+import { convertCertBufferToPEM } from "./verifications";
 
 /**
  * Match properties of the authenticator's attestation statement against expected values as

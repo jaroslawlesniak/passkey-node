@@ -1,2 +1,2 @@
-export * as userRepository from "./user";
 export * as credentialRepository from "./credential";
+export * as userRepository from "./user";
