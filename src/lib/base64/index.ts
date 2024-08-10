@@ -1,6 +1,6 @@
 import base64 from "@hexagon/base64";
 
-import type { Base64URLString } from "../auth";
+import type { Base64URLString } from "@/lib/auth";
 
 /**
  * Decode from a Base64URL-encoded string to an ArrayBuffer. Best used when converting a
