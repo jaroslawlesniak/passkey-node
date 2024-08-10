@@ -200,9 +200,9 @@ export interface SubtleCrypto {
     data: BufferSource,
   ): Promise<ArrayBuffer>;
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/exportKey) */
-  exportKey(format: 'jwk', key: CryptoKey): Promise<JsonWebKey>;
+  exportKey(format: "jwk", key: CryptoKey): Promise<JsonWebKey>;
   exportKey(
-    format: Exclude<KeyFormat, 'jwk'>,
+    format: Exclude<KeyFormat, "jwk">,
     key: CryptoKey,
   ): Promise<ArrayBuffer>;
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/generateKey) */
@@ -223,7 +223,7 @@ export interface SubtleCrypto {
   ): Promise<CryptoKeyPair | CryptoKey>;
   /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/SubtleCrypto/importKey) */
   importKey(
-    format: 'jwk',
+    format: "jwk",
     keyData: JsonWebKey,
     algorithm:
       | AlgorithmIdentifier
@@ -235,7 +235,7 @@ export interface SubtleCrypto {
     keyUsages: ReadonlyArray<KeyUsage>,
   ): Promise<CryptoKey>;
   importKey(
-    format: Exclude<KeyFormat, 'jwk'>,
+    format: Exclude<KeyFormat, "jwk">,
     keyData: BufferSource,
     algorithm:
       | AlgorithmIdentifier
@@ -457,37 +457,37 @@ export interface RsaKeyGenParams extends Algorithm {
 }
 
 export type AttestationConveyancePreference =
-  | 'direct'
-  | 'enterprise'
-  | 'indirect'
-  | 'none';
+  | "direct"
+  | "enterprise"
+  | "indirect"
+  | "none";
 export type AuthenticatorTransport =
-  | 'ble'
-  | 'hybrid'
-  | 'internal'
-  | 'nfc'
-  | 'usb';
+  | "ble"
+  | "hybrid"
+  | "internal"
+  | "nfc"
+  | "usb";
 export type COSEAlgorithmIdentifier = number;
 export type UserVerificationRequirement =
-  | 'discouraged'
-  | 'preferred'
-  | 'required';
-export type AuthenticatorAttachment = 'cross-platform' | 'platform';
-export type ResidentKeyRequirement = 'discouraged' | 'preferred' | 'required';
+  | "discouraged"
+  | "preferred"
+  | "required";
+export type AuthenticatorAttachment = "cross-platform" | "platform";
+export type ResidentKeyRequirement = "discouraged" | "preferred" | "required";
 export type BufferSource = ArrayBufferView | ArrayBuffer;
-export type PublicKeyCredentialType = 'public-key';
+export type PublicKeyCredentialType = "public-key";
 export type AlgorithmIdentifier = Algorithm | string;
 export type KeyUsage =
-  | 'decrypt'
-  | 'deriveBits'
-  | 'deriveKey'
-  | 'encrypt'
-  | 'sign'
-  | 'unwrapKey'
-  | 'verify'
-  | 'wrapKey';
-export type KeyFormat = 'jwk' | 'pkcs8' | 'raw' | 'spki';
-export type KeyType = 'private' | 'public' | 'secret';
+  | "decrypt"
+  | "deriveBits"
+  | "deriveKey"
+  | "encrypt"
+  | "sign"
+  | "unwrapKey"
+  | "verify"
+  | "wrapKey";
+export type KeyFormat = "jwk" | "pkcs8" | "raw" | "spki";
+export type KeyType = "private" | "public" | "secret";
 export type HashAlgorithmIdentifier = AlgorithmIdentifier;
 export type NamedCurve = string;
 export type BigInteger = Uint8Array;
@@ -647,13 +647,13 @@ export interface AuthenticatorAttestationResponseFuture
  * know about it (sometime after 4.6.3)
  */
 export type AuthenticatorTransportFuture =
-  | 'ble'
-  | 'cable'
-  | 'hybrid'
-  | 'internal'
-  | 'nfc'
-  | 'smart-card'
-  | 'usb';
+  | "ble"
+  | "cable"
+  | "hybrid"
+  | "internal"
+  | "nfc"
+  | "smart-card"
+  | "usb";
 
 /**
  * A super class of TypeScript's `PublicKeyCredentialDescriptor` that knows about the latest
@@ -661,7 +661,7 @@ export type AuthenticatorTransportFuture =
  * know about it (sometime after 4.6.3)
  */
 export interface PublicKeyCredentialDescriptorFuture
-  extends Omit<PublicKeyCredentialDescriptor, 'transports'> {
+  extends Omit<PublicKeyCredentialDescriptor, "transports"> {
   transports?: AuthenticatorTransportFuture[];
 }
 
@@ -694,7 +694,7 @@ export interface PublicKeyCredentialFuture extends PublicKeyCredential {
  * - `"singleDevice"` credentials will never be backed up
  * - `"multiDevice"` credentials can be backed up
  */
-export type CredentialDeviceType = 'singleDevice' | 'multiDevice';
+export type CredentialDeviceType = "singleDevice" | "multiDevice";
 
 export interface RegistrationCredentialWithResponse
   extends RegistrationCredential {
@@ -718,7 +718,9 @@ export type GenerateAuthenticationOptionsOpts = {
 
 export type VerifyAuthenticationResponseOpts = {
   response: AuthenticationResponseJSON;
-  expectedChallenge: string | ((challenge: string) => boolean | Promise<boolean>);
+  expectedChallenge:
+    | string
+    | ((challenge: string) => boolean | Promise<boolean>);
   expectedOrigin: string | string[];
   expectedRPID: string | string[];
   authenticator: AuthenticatorDevice;
@@ -786,7 +788,7 @@ export type ClientDataJSON = {
   crossOrigin?: boolean;
   tokenBinding?: {
     id?: string;
-    status: 'present' | 'supported' | 'not-supported';
+    status: "present" | "supported" | "not-supported";
   };
 };
 
@@ -830,7 +832,7 @@ export type ParsedAuthenticatorData = {
 export enum COSEKTY {
   OKP = 1,
   EC2 = 2,
-  RSA = 3
+  RSA = 3,
 }
 
 export enum COSEKEYS {
@@ -840,7 +842,7 @@ export enum COSEKEYS {
   x = -2,
   y = -3,
   n = -1,
-  e = -2
+  e = -2,
 }
 
 /**
@@ -860,7 +862,7 @@ export enum COSEALG {
   RS256 = -257,
   RS384 = -258,
   RS512 = -259,
-  RS1 = -65535
+  RS1 = -65535,
 }
 
 export type COSEPublicKey = {
@@ -912,13 +914,13 @@ export type COSEPublicKeyRSA = COSEPublicKey & {
   set(key: COSEKEYS.e, value: Uint8Array): void;
 };
 
-export type SubtleCryptoAlg = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512';
-export type SubtleCryptoCrv = 'P-256' | 'P-384' | 'P-521' | 'Ed25519';
+export type SubtleCryptoAlg = "SHA-1" | "SHA-256" | "SHA-384" | "SHA-512";
+export type SubtleCryptoCrv = "P-256" | "P-384" | "P-521" | "Ed25519";
 export type SubtleCryptoKeyAlgName =
-  | 'ECDSA'
-  | 'Ed25519'
-  | 'RSASSA-PKCS1-v1_5'
-  | 'RSA-PSS';
+  | "ECDSA"
+  | "Ed25519"
+  | "RSASSA-PKCS1-v1_5"
+  | "RSA-PSS";
 
 export type GenerateRegistrationOptionsOpts = {
   rpName: string;
@@ -940,7 +942,9 @@ export type GenerateRegistrationOptionsOpts = {
 
 export type VerifyRegistrationResponseOpts = {
   response: RegistrationResponseJSON;
-  expectedChallenge: string | ((challenge: string) => boolean | Promise<boolean>);
+  expectedChallenge:
+    | string
+    | ((challenge: string) => boolean | Promise<boolean>);
   expectedOrigin: string | string[];
   expectedRPID?: string | string[];
   expectedType?: string | string[];
@@ -948,7 +952,14 @@ export type VerifyRegistrationResponseOpts = {
   supportedAlgorithmIDs?: COSEAlgorithmIdentifier[];
 };
 
-export type AttestationFormat = 'fido-u2f' | 'packed' | 'android-safetynet' | 'android-key' | 'tpm' | 'apple' | 'none';
+export type AttestationFormat =
+  | "fido-u2f"
+  | "packed"
+  | "android-safetynet"
+  | "android-key"
+  | "tpm"
+  | "apple"
+  | "none";
 
 /**
  * Result of registration verification
@@ -984,7 +995,7 @@ export type VerifiedRegistrationResponse = {
     aaguid: string;
     credentialID: Base64URLString;
     credentialPublicKey: Uint8Array;
-    credentialType: 'public-key';
+    credentialType: "public-key";
     attestationObject: Uint8Array;
     userVerified: boolean;
     credentialDeviceType: CredentialDeviceType;
@@ -1000,13 +1011,13 @@ export type VerifiedRegistrationResponse = {
  * possible values within it.
  */
 export type AttestationStatement = {
-  get(key: 'sig'): Uint8Array | undefined;
-  get(key: 'x5c'): Uint8Array[] | undefined;
-  get(key: 'response'): Uint8Array | undefined;
-  get(key: 'alg'): number | undefined;
-  get(key: 'ver'): string | undefined;
-  get(key: 'certInfo'): Uint8Array | undefined;
-  get(key: 'pubArea'): Uint8Array | undefined;
+  get(key: "sig"): Uint8Array | undefined;
+  get(key: "x5c"): Uint8Array[] | undefined;
+  get(key: "response"): Uint8Array | undefined;
+  get(key: "alg"): number | undefined;
+  get(key: "ver"): string | undefined;
+  get(key: "certInfo"): Uint8Array | undefined;
+  get(key: "pubArea"): Uint8Array | undefined;
   readonly size: number;
 };
 
@@ -1026,9 +1037,9 @@ export type AttestationFormatVerifierOpts = {
 };
 
 export type AttestationObject = {
-  get(key: 'fmt'): AttestationFormat;
-  get(key: 'attStmt'): AttestationStatement;
-  get(key: 'authData'): Uint8Array;
+  get(key: "fmt"): AttestationFormat;
+  get(key: "attStmt"): AttestationStatement;
+  get(key: "authData"): Uint8Array;
 };
 
 export type CertificateInfo = {
@@ -1113,12 +1124,27 @@ export type StatusReport = {
   certificationPolicyVersion?: string;
   certificationRequirementsVersion?: string;
 };
-export type AuthenticatorStatus = 'NOT_FIDO_CERTIFIED' | 'FIDO_CERTIFIED' | 'USER_VERIFICATION_BYPASS' | 'ATTESTATION_KEY_COMPROMISE' | 'USER_KEY_REMOTE_COMPROMISE' | 'USER_KEY_PHYSICAL_COMPROMISE' | 'UPDATE_AVAILABLE' | 'REVOKED' | 'SELF_ASSERTION_SUBMITTED' | 'FIDO_CERTIFIED_L1' | 'FIDO_CERTIFIED_L1plus' | 'FIDO_CERTIFIED_L2' | 'FIDO_CERTIFIED_L2plus' | 'FIDO_CERTIFIED_L3' | 'FIDO_CERTIFIED_L3plus';
+export type AuthenticatorStatus =
+  | "NOT_FIDO_CERTIFIED"
+  | "FIDO_CERTIFIED"
+  | "USER_VERIFICATION_BYPASS"
+  | "ATTESTATION_KEY_COMPROMISE"
+  | "USER_KEY_REMOTE_COMPROMISE"
+  | "USER_KEY_PHYSICAL_COMPROMISE"
+  | "UPDATE_AVAILABLE"
+  | "REVOKED"
+  | "SELF_ASSERTION_SUBMITTED"
+  | "FIDO_CERTIFIED_L1"
+  | "FIDO_CERTIFIED_L1plus"
+  | "FIDO_CERTIFIED_L2"
+  | "FIDO_CERTIFIED_L2plus"
+  | "FIDO_CERTIFIED_L3"
+  | "FIDO_CERTIFIED_L3plus";
 /**
-* Types defined in the FIDO Metadata Statement spec
-*
-* See https://fidoalliance.org/specs/mds/fido-metadata-statement-v3.0-ps-20210518.html
-*/
+ * Types defined in the FIDO Metadata Statement spec
+ *
+ * See https://fidoalliance.org/specs/mds/fido-metadata-statement-v3.0-ps-20210518.html
+ */
 export type CodeAccuracyDescriptor = {
   base: number;
   minLength: number;
@@ -1207,78 +1233,136 @@ export type MetadataStatement = {
   authenticatorGetInfo?: AuthenticatorGetInfo;
 };
 /**
-* Types declared in other specs
-*/
+ * Types declared in other specs
+ */
 /**
-* USER_VERIFY
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#user-verification-methods
-*/
-export type UserVerify = 'presence_internal' | 'fingerprint_internal' | 'passcode_internal' | 'voiceprint_internal' | 'faceprint_internal' | 'location_internal' | 'eyeprint_internal' | 'pattern_internal' | 'handprint_internal' | 'passcode_external' | 'pattern_external' | 'none' | 'all';
+ * USER_VERIFY
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#user-verification-methods
+ */
+export type UserVerify =
+  | "presence_internal"
+  | "fingerprint_internal"
+  | "passcode_internal"
+  | "voiceprint_internal"
+  | "faceprint_internal"
+  | "location_internal"
+  | "eyeprint_internal"
+  | "pattern_internal"
+  | "handprint_internal"
+  | "passcode_external"
+  | "pattern_external"
+  | "none"
+  | "all";
 /**
-* ALG_SIGN
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#authentication-algorithms
-*
-* Using this helpful TS pattern here so that we can strongly enforce the existence of COSE info
-* mappings in `algSignToCOSEInfoMap` in verifyAttestationWithMetadata.ts
-*/
-export type AlgSign = typeof AlgSign[number];
-declare const AlgSign: readonly ["secp256r1_ecdsa_sha256_raw", "secp256r1_ecdsa_sha256_der", "rsassa_pss_sha256_raw", "rsassa_pss_sha256_der", "secp256k1_ecdsa_sha256_raw", "secp256k1_ecdsa_sha256_der", "rsassa_pss_sha384_raw", "rsassa_pkcsv15_sha256_raw", "rsassa_pkcsv15_sha384_raw", "rsassa_pkcsv15_sha512_raw", "rsassa_pkcsv15_sha1_raw", "secp384r1_ecdsa_sha384_raw", "secp512r1_ecdsa_sha256_raw", "ed25519_eddsa_sha512_raw"];
+ * ALG_SIGN
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#authentication-algorithms
+ *
+ * Using this helpful TS pattern here so that we can strongly enforce the existence of COSE info
+ * mappings in `algSignToCOSEInfoMap` in verifyAttestationWithMetadata.ts
+ */
+export type AlgSign = (typeof AlgSign)[number];
+declare const AlgSign: readonly [
+  "secp256r1_ecdsa_sha256_raw",
+  "secp256r1_ecdsa_sha256_der",
+  "rsassa_pss_sha256_raw",
+  "rsassa_pss_sha256_der",
+  "secp256k1_ecdsa_sha256_raw",
+  "secp256k1_ecdsa_sha256_der",
+  "rsassa_pss_sha384_raw",
+  "rsassa_pkcsv15_sha256_raw",
+  "rsassa_pkcsv15_sha384_raw",
+  "rsassa_pkcsv15_sha512_raw",
+  "rsassa_pkcsv15_sha1_raw",
+  "secp384r1_ecdsa_sha384_raw",
+  "secp512r1_ecdsa_sha256_raw",
+  "ed25519_eddsa_sha512_raw",
+];
 /**
-* ALG_KEY
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#public-key-representation-formats
-*/
-export type AlgKey = 'ecc_x962_raw' | 'ecc_x962_der' | 'rsa_2048_raw' | 'rsa_2048_der' | 'cose';
+ * ALG_KEY
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#public-key-representation-formats
+ */
+export type AlgKey =
+  | "ecc_x962_raw"
+  | "ecc_x962_der"
+  | "rsa_2048_raw"
+  | "rsa_2048_der"
+  | "cose";
 /**
-* ATTESTATION
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#authenticator-attestation-types
-*/
-export type Attestation = 'basic_full' | 'basic_surrogate' | 'ecdaa' | 'attca' | 'anonca' | 'none';
+ * ATTESTATION
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#authenticator-attestation-types
+ */
+export type Attestation =
+  | "basic_full"
+  | "basic_surrogate"
+  | "ecdaa"
+  | "attca"
+  | "anonca"
+  | "none";
 /**
-* KEY_PROTECTION
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#key-protection-types
-*/
-export type KeyProtection = 'software' | 'hardware' | 'tee' | 'secure_element' | 'remote_handle';
+ * KEY_PROTECTION
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#key-protection-types
+ */
+export type KeyProtection =
+  | "software"
+  | "hardware"
+  | "tee"
+  | "secure_element"
+  | "remote_handle";
 /**
-* MATCHER_PROTECTION
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#matcher-protection-types
-*/
-export type MatcherProtection = 'software' | 'tee' | 'on_chip';
+ * MATCHER_PROTECTION
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#matcher-protection-types
+ */
+export type MatcherProtection = "software" | "tee" | "on_chip";
 /**
-* ATTACHMENT_HINT
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#authenticator-attachment-hints
-*/
-export type AttachmentHint = 'internal' | 'external' | 'wired' | 'wireless' | 'nfc' | 'bluetooth' | 'network' | 'ready' | 'wifi_direct';
+ * ATTACHMENT_HINT
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#authenticator-attachment-hints
+ */
+export type AttachmentHint =
+  | "internal"
+  | "external"
+  | "wired"
+  | "wireless"
+  | "nfc"
+  | "bluetooth"
+  | "network"
+  | "ready"
+  | "wifi_direct";
 /**
-* TRANSACTION_CONFIRMATION_DISPLAY
-* https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#transaction-confirmation-display-types
-*/
-export type TransactionConfirmationDisplay = 'any' | 'privileged_software' | 'tee' | 'hardware' | 'remote';
+ * TRANSACTION_CONFIRMATION_DISPLAY
+ * https://fidoalliance.org/specs/common-specs/fido-registry-v2.2-ps-20220523.html#transaction-confirmation-display-types
+ */
+export type TransactionConfirmationDisplay =
+  | "any"
+  | "privileged_software"
+  | "tee"
+  | "hardware"
+  | "remote";
 /**
-* https://fidoalliance.org/specs/fido-uaf-v1.2-ps-20201020/fido-uaf-protocol-v1.2-ps-20201020.html#version-interface
-*/
+ * https://fidoalliance.org/specs/fido-uaf-v1.2-ps-20201020/fido-uaf-protocol-v1.2-ps-20201020.html#version-interface
+ */
 export type Version = {
   major: number;
   minor: number;
 };
 /**
-* https://fidoalliance.org/specs/fido-v2.0-ps-20190130/fido-client-to-authenticator-protocol-v2.0-ps-20190130.html#authenticatorGetInfoz
-*/
+ * https://fidoalliance.org/specs/fido-v2.0-ps-20190130/fido-client-to-authenticator-protocol-v2.0-ps-20190130.html#authenticatorGetInfoz
+ */
 export type AuthenticatorGetInfo = {
-  versions: ('FIDO_2_0' | 'U2F_V2')[];
+  versions: ("FIDO_2_0" | "U2F_V2")[];
   extensions?: string[];
   aaguid: string;
   options?: {
-      plat?: boolean;
-      rk?: boolean;
-      clientPin?: boolean;
-      up?: boolean;
-      uv?: boolean;
+    plat?: boolean;
+    rk?: boolean;
+    clientPin?: boolean;
+    up?: boolean;
+    uv?: boolean;
   };
   maxMsgSize?: number;
   pinProtocols?: number[];
   algorithms?: {
-      type: 'public-key';
-      alg: number;
+    type: "public-key";
+    alg: number;
   }[];
 };
 
@@ -1300,7 +1384,7 @@ export type SafetyNetJWTPayload = {
 export type SafetyNetJWTSignature = string;
 
 export type ParsedPubArea = {
-  type: 'TPM_ALG_RSA' | 'TPM_ALG_ECC';
+  type: "TPM_ALG_RSA" | "TPM_ALG_ECC";
   nameAlg: string;
   objectAttributes: {
     fixedTPM: boolean;
@@ -1362,7 +1446,7 @@ export type ParsedCertInfo = {
   };
 };
 
-export type RootCertIdentifier = AttestationFormat | 'mds';
+export type RootCertIdentifier = AttestationFormat | "mds";
 
 // Cached MDS APIs from which BLOBs are downloaded
 export type CachedMDS = {
@@ -1384,4 +1468,4 @@ export enum SERVICE_STATE {
 
 // Allow MetadataService to accommodate unregistered AAGUIDs ("permissive"), or only allow
 // registered AAGUIDs ("strict"). Currently primarily impacts how `getStatement()` operates
-export type VerificationMode = 'permissive' | 'strict';
+export type VerificationMode = "permissive" | "strict";

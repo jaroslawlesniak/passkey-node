@@ -1,20 +1,39 @@
-import { AsnSerializer, id_ce_basicConstraints, AsnParser, BasicConstraints, AuthorityKeyIdentifier, SubjectKeyIdentifier, CRLDistributionPoints, id_ce_authorityKeyIdentifier, id_ce_subjectKeyIdentifier, id_ce_cRLDistributionPoints, CertificateList, Certificate } from '@/lib/asn'
-import { mapX509SignatureAlgToCOSEAlg, verifySignature } from '../utils';
-import { toBuffer } from '@/lib/base64';
-import { CAAuthorityInfo, CertificateInfo, Issuer, ParsedCertInfo, Subject } from '../types';
-import { toDataView, toHex } from '@/lib/uint';
-import { TPM_ALG, TPM_ST } from './constants';
+import {
+  AsnSerializer,
+  id_ce_basicConstraints,
+  AsnParser,
+  BasicConstraints,
+  AuthorityKeyIdentifier,
+  SubjectKeyIdentifier,
+  CRLDistributionPoints,
+  id_ce_authorityKeyIdentifier,
+  id_ce_subjectKeyIdentifier,
+  id_ce_cRLDistributionPoints,
+  CertificateList,
+  Certificate,
+} from "@/lib/asn";
+import { mapX509SignatureAlgToCOSEAlg, verifySignature } from "../utils";
+import { toBuffer } from "@/lib/base64";
+import {
+  CAAuthorityInfo,
+  CertificateInfo,
+  Issuer,
+  ParsedCertInfo,
+  Subject,
+} from "../types";
+import { toDataView, toHex } from "@/lib/uint";
+import { TPM_ALG, TPM_ST } from "./constants";
 
 /**
  * Take a certificate in PEM format and convert it to bytes
  */
 export function convertPEMToBytes(pem: string): Uint8Array {
   const certBase64 = pem
-    .replace('-----BEGIN CERTIFICATE-----', '')
-    .replace('-----END CERTIFICATE-----', '')
-    .replace(/[\n ]/g, '');
+    .replace("-----BEGIN CERTIFICATE-----", "")
+    .replace("-----END CERTIFICATE-----", "")
+    .replace(/[\n ]/g, "");
 
-  return toBuffer(certBase64, 'base64');
+  return toBuffer(certBase64, "base64");
 }
 
 const cacheRevokedCerts: { [certAuthorityKeyID: string]: CAAuthorityInfo } = {};
@@ -67,9 +86,7 @@ export async function isCertRevoked(cert: Certificate): Promise<boolean> {
     keyIdentifier = toHex(new Uint8Array(extSubjectKeyID.buffer));
   }
 
-  const certSerialHex = toHex(
-    new Uint8Array(cert.tbsCertificate.serialNumber),
-  );
+  const certSerialHex = toHex(new Uint8Array(cert.tbsCertificate.serialNumber));
 
   if (keyIdentifier) {
     const cached = cacheRevokedCerts[keyIdentifier];
@@ -82,8 +99,9 @@ export async function isCertRevoked(cert: Certificate): Promise<boolean> {
     }
   }
 
-  const crlURL = extCRLDistributionPoints?.[0].distributionPoint?.fullName?.[0]
-    .uniformResourceIdentifier;
+  const crlURL =
+    extCRLDistributionPoints?.[0].distributionPoint?.fullName?.[0]
+      .uniformResourceIdentifier;
 
   // If no URL is provided then we have nothing to check
   if (!crlURL) {
@@ -95,14 +113,16 @@ export async function isCertRevoked(cert: Certificate): Promise<boolean> {
   try {
     const respCRL = await fetch(crlURL);
     certListBytes = await respCRL.arrayBuffer();
-  } catch (_err) {
+  } catch (error) {
+    console.warn(error);
     return false;
   }
 
   let data: CertificateList;
   try {
     data = AsnParser.parse(certListBytes, CertificateList);
-  } catch (_err) {
+  } catch (error) {
+    console.log(error);
     // Something was malformed with the CRL, so pass
     return false;
   }
@@ -122,9 +142,7 @@ export async function isCertRevoked(cert: Certificate): Promise<boolean> {
 
   if (revokedCerts) {
     for (const cert of revokedCerts) {
-      const revokedHex = toHex(
-        new Uint8Array(cert.userCertificate),
-      );
+      const revokedHex = toHex(new Uint8Array(cert.userCertificate));
       newCached.revokedCerts.push(revokedHex);
     }
 
@@ -190,7 +208,7 @@ export async function validateCertificatePath(
 
 async function _validatePath(certificates: string[]): Promise<boolean> {
   if (new Set(certificates).size !== certificates.length) {
-    throw new Error('Invalid certificate path: found duplicate certificates');
+    throw new Error("Invalid certificate path: found duplicate certificates");
   }
 
   // From leaf to root, make sure each cert is issued by the next certificate in the chain
@@ -200,7 +218,7 @@ async function _validatePath(certificates: string[]): Promise<boolean> {
     const isLeafCert = i === 0;
     const isRootCert = i + 1 >= certificates.length;
 
-    let issuerPem = '';
+    let issuerPem = "";
     if (isRootCert) {
       issuerPem = subjectPem;
     } else {
@@ -259,7 +277,7 @@ async function _validatePath(certificates: string[]): Promise<boolean> {
     });
 
     if (!verified) {
-      throw new Error('Invalid certificate path: invalid signature');
+      throw new Error("Invalid certificate path: invalid signature");
     }
   }
 
@@ -269,24 +287,24 @@ async function _validatePath(certificates: string[]): Promise<boolean> {
 // Custom errors to help pass on certain errors
 class InvalidSubjectAndIssuer extends Error {
   constructor() {
-    const message = 'Subject issuer did not match issuer subject';
+    const message = "Subject issuer did not match issuer subject";
     super(message);
-    this.name = 'InvalidSubjectAndIssuer';
+    this.name = "InvalidSubjectAndIssuer";
   }
 }
 
 class CertificateNotYetValidOrExpired extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'CertificateNotYetValidOrExpired';
+    this.name = "CertificateNotYetValidOrExpired";
   }
 }
 
-const issuerSubjectIDKey: { [key: string]: 'C' | 'O' | 'OU' | 'CN' } = {
-  '2.5.4.6': 'C',
-  '2.5.4.10': 'O',
-  '2.5.4.11': 'OU',
-  '2.5.4.3': 'CN',
+const issuerSubjectIDKey: { [key: string]: "C" | "O" | "OU" | "CN" } = {
+  "2.5.4.6": "C",
+  "2.5.4.10": "O",
+  "2.5.4.11": "OU",
+  "2.5.4.3": "CN",
 };
 
 /**
@@ -301,7 +319,7 @@ export function getCertificateInfo(
   const parsedCert = x509.tbsCertificate;
 
   // Issuer
-  const issuer: Issuer = { combined: '' };
+  const issuer: Issuer = { combined: "" };
   parsedCert.issuer.forEach(([iss]) => {
     const key = issuerSubjectIDKey[iss.type];
     if (key) {
@@ -311,7 +329,7 @@ export function getCertificateInfo(
   issuer.combined = issuerSubjectToString(issuer);
 
   // Subject
-  const subject: Subject = { combined: '' };
+  const subject: Subject = { combined: "" };
   parsedCert.subject.forEach(([iss]) => {
     const key = issuerSubjectIDKey[iss.type];
     if (key) {
@@ -371,7 +389,7 @@ function issuerSubjectToString(input: Issuer | Subject): string {
     parts.push(input.CN);
   }
 
-  return parts.join(' : ');
+  return parts.join(" : ");
 }
 
 /**
@@ -395,37 +413,40 @@ export function parseCertInfo(certInfo: Uint8Array): ParsedCertInfo {
   pointer += 2;
   const qualifiedSigner = certInfo.slice(
     pointer,
-    pointer += qualifiedSignerLength,
+    (pointer += qualifiedSignerLength),
   );
 
   // Get the expected hash of `attsToBeSigned`
   const extraDataLength = dataView.getUint16(pointer);
   pointer += 2;
-  const extraData = certInfo.slice(pointer, pointer += extraDataLength);
+  const extraData = certInfo.slice(pointer, (pointer += extraDataLength));
 
   // Information about the TPM device's internal clock, can be ignored
-  const clock = certInfo.slice(pointer, pointer += 8);
+  const clock = certInfo.slice(pointer, (pointer += 8));
   const resetCount = dataView.getUint32(pointer);
   pointer += 4;
   const restartCount = dataView.getUint32(pointer);
   pointer += 4;
-  const safe = !!certInfo.slice(pointer, pointer += 1);
+  const safe = !!certInfo.slice(pointer, (pointer += 1));
 
   const clockInfo = { clock, resetCount, restartCount, safe };
 
   // TPM device firmware version
-  const firmwareVersion = certInfo.slice(pointer, pointer += 8);
+  const firmwareVersion = certInfo.slice(pointer, (pointer += 8));
 
   // Attested Name
   const attestedNameLength = dataView.getUint16(pointer);
   pointer += 2;
-  const attestedName = certInfo.slice(pointer, pointer += attestedNameLength);
+  const attestedName = certInfo.slice(pointer, (pointer += attestedNameLength));
   const attestedNameDataView = toDataView(attestedName);
 
   // Attested qualified name, can be ignored
   const qualifiedNameLength = dataView.getUint16(pointer);
   pointer += 2;
-  const qualifiedName = certInfo.slice(pointer, pointer += qualifiedNameLength);
+  const qualifiedName = certInfo.slice(
+    pointer,
+    (pointer += qualifiedNameLength),
+  );
 
   const attested = {
     nameAlg: TPM_ALG[attestedNameDataView.getUint16(0)],

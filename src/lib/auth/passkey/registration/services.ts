@@ -1,6 +1,21 @@
-import { CachedBLOBEntry, CachedMDS, MDSJWTHeader, MDSJWTPayload, MetadataStatement, RootCertIdentifier, SERVICE_STATE, VerificationMode } from "../types";
+import {
+  CachedBLOBEntry,
+  CachedMDS,
+  MDSJWTHeader,
+  MDSJWTPayload,
+  MetadataStatement,
+  RootCertIdentifier,
+  SERVICE_STATE,
+  VerificationMode,
+} from "../types";
 import { convertAAGUIDToString } from "../utils";
-import { Apple_WebAuthn_Root_CA, GlobalSign_Root_CA, GlobalSign_Root_CA_R3, Google_Hardware_Attestation_Root_1, Google_Hardware_Attestation_Root_2 } from "./caCerts";
+import {
+  Apple_WebAuthn_Root_CA,
+  GlobalSign_Root_CA,
+  GlobalSign_Root_CA_R3,
+  Google_Hardware_Attestation_Root_1,
+  Google_Hardware_Attestation_Root_2,
+} from "./caCerts";
 import { convertPEMToBytes, validateCertificatePath } from "./certificates";
 import { defaultURLMDS } from "./constants";
 import { parseJWT, verifyJWT } from "./metadata";
@@ -52,7 +67,7 @@ export const SettingsService = new BaseSettingsService();
 
 // Initialize default certificates
 SettingsService.setRootCertificates({
-  identifier: 'android-key',
+  identifier: "android-key",
   certificates: [
     Google_Hardware_Attestation_Root_1,
     Google_Hardware_Attestation_Root_2,
@@ -60,17 +75,17 @@ SettingsService.setRootCertificates({
 });
 
 SettingsService.setRootCertificates({
-  identifier: 'android-safetynet',
+  identifier: "android-safetynet",
   certificates: [GlobalSign_Root_CA],
 });
 
 SettingsService.setRootCertificates({
-  identifier: 'apple',
+  identifier: "apple",
   certificates: [Apple_WebAuthn_Root_CA],
 });
 
 SettingsService.setRootCertificates({
-  identifier: 'mds',
+  identifier: "mds",
   certificates: [GlobalSign_Root_CA_R3],
 });
 
@@ -84,7 +99,7 @@ export class BaseMetadataService {
   private mdsCache: { [url: string]: CachedMDS } = {};
   private statementCache: { [aaguid: string]: CachedBLOBEntry } = {};
   private state: SERVICE_STATE = SERVICE_STATE.DISABLED;
-  private verificationMode: VerificationMode = 'strict';
+  private verificationMode: VerificationMode = "strict";
 
   /**
    * Prepare the service to handle remote MDS servers and/or cache local metadata statements.
@@ -121,9 +136,9 @@ export class BaseMetadataService {
             entry: {
               metadataStatement: statement,
               statusReports: [],
-              timeOfLastStatusChange: '1970-01-01',
+              timeOfLastStatusChange: "1970-01-01",
             },
-            url: '',
+            url: "",
           };
 
           statementsAdded += 1;
@@ -196,7 +211,7 @@ export class BaseMetadataService {
     const cachedStatement = this.statementCache[aaguid];
 
     if (!cachedStatement) {
-      if (this.verificationMode === 'strict') {
+      if (this.verificationMode === "strict") {
         // FIDO conformance requires RP's to only support registered AAGUID's
         throw new Error(`No metadata statement found for aaguid "${aaguid}"`);
       }
@@ -225,10 +240,10 @@ export class BaseMetadataService {
     for (const report of entry.statusReports) {
       const { status } = report;
       if (
-        status === 'USER_VERIFICATION_BYPASS' ||
-        status === 'ATTESTATION_KEY_COMPROMISE' ||
-        status === 'USER_KEY_REMOTE_COMPROMISE' ||
-        status === 'USER_KEY_PHYSICAL_COMPROMISE'
+        status === "USER_VERIFICATION_BYPASS" ||
+        status === "ATTESTATION_KEY_COMPROMISE" ||
+        status === "USER_KEY_REMOTE_COMPROMISE" ||
+        status === "USER_KEY_PHYSICAL_COMPROMISE"
       ) {
         throw new Error(`Detected compromised aaguid "${aaguid}"`);
       }
@@ -263,7 +278,7 @@ export class BaseMetadataService {
     try {
       // Validate the certificate chain
       const rootCerts = SettingsService.getRootCertificates({
-        identifier: 'mds',
+        identifier: "mds",
       });
       await validateCertificatePath(headerCertsPEM, rootCerts);
     } catch (error) {
@@ -281,7 +296,7 @@ export class BaseMetadataService {
 
     if (!verified) {
       // From FIDO MDS docs: "The FIDO Server SHOULD ignore the file if the signature is invalid."
-      throw new Error('BLOB signature could not be verified');
+      throw new Error("BLOB signature could not be verified");
     }
 
     // Cache statements for FIDO2 devices
@@ -293,7 +308,7 @@ export class BaseMetadataService {
     }
 
     // Remember info about the server so we can refresh later
-    const [year, month, day] = payload.nextUpdate.split('-');
+    const [year, month, day] = payload.nextUpdate.split("-");
     this.mdsCache[url] = {
       ...mds,
       // Store the payload `no` to make sure we're getting the next BLOB in the sequence
@@ -350,11 +365,11 @@ export class BaseMetadataService {
     this.state = newState;
 
     if (newState === SERVICE_STATE.DISABLED) {
-      console.log('MetadataService is DISABLED');
+      console.log("MetadataService is DISABLED");
     } else if (newState === SERVICE_STATE.REFRESHING) {
-      console.log('MetadataService is REFRESHING');
+      console.log("MetadataService is REFRESHING");
     } else if (newState === SERVICE_STATE.READY) {
-      console.log('MetadataService is READY');
+      console.log("MetadataService is READY");
     }
   }
 }

@@ -1,6 +1,17 @@
 import { isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "@/lib/cose";
-import { AlgSign, Base64URLString, COSEALG, COSECRV, COSEKEYS, COSEKTY, MetadataStatement } from "../types";
-import { convertX509PublicKeyToCOSE, decodeCredentialPublicKey } from "../utils";
+import {
+  AlgSign,
+  Base64URLString,
+  COSEALG,
+  COSECRV,
+  COSEKEYS,
+  COSEKTY,
+  MetadataStatement,
+} from "../types";
+import {
+  convertX509PublicKeyToCOSE,
+  decodeCredentialPublicKey,
+} from "../utils";
 import { convertCertBufferToPEM } from "./verifications";
 import { validateCertificatePath } from "./certificates";
 import { toBuffer, toUTF8String } from "@/lib/base64";
@@ -47,15 +58,15 @@ export async function verifyAttestationWithMetadata({
   const alg = decodedPublicKey.get(COSEKEYS.alg);
 
   if (!kty) {
-    throw new Error('Credential public key was missing kty');
+    throw new Error("Credential public key was missing kty");
   }
 
   if (!alg) {
-    throw new Error('Credential public key was missing alg');
+    throw new Error("Credential public key was missing alg");
   }
 
   if (!kty) {
-    throw new Error('Credential public key was missing kty');
+    throw new Error("Credential public key was missing kty");
   }
 
   // Assume everything is a number because these values should be
@@ -109,9 +120,10 @@ export async function verifyAttestationWithMetadata({
      * ```
      */
     const debugMDSAlgs = authenticationAlgorithms.map(
-      (algSign) => `'${algSign}' (COSE info: ${stringifyCOSEInfo(algSignToCOSEInfoMap[algSign])})`,
+      (algSign) =>
+        `'${algSign}' (COSE info: ${stringifyCOSEInfo(algSignToCOSEInfoMap[algSign])})`,
     );
-    const strMDSAlgs = JSON.stringify(debugMDSAlgs, null, 2).replace(/"/g, '');
+    const strMDSAlgs = JSON.stringify(debugMDSAlgs, null, 2).replace(/"/g, "");
 
     /**
      * Construct useful error output about the public key
@@ -211,7 +223,7 @@ export const algSignToCOSEInfoMap: { [key in AlgSign]: COSEInfo } = {
 function stringifyCOSEInfo(info: COSEInfo): string {
   const { kty, alg, crv } = info;
 
-  let toReturn = '';
+  let toReturn = "";
   if (kty !== COSEKTY.RSA) {
     toReturn = `{ kty: ${kty}, alg: ${alg}, crv: ${crv} }`;
   } else {
@@ -231,7 +243,7 @@ function stringifyCOSEInfo(info: COSEInfo): string {
  * (Pulled from https://www.rfc-editor.org/rfc/rfc7515#section-4.1.1)
  */
 export function verifyJWT(jwt: string, leafCert: Uint8Array): Promise<boolean> {
-  const [header, payload, signature] = jwt.split('.');
+  const [header, payload, signature] = jwt.split(".");
 
   const certCOSE = convertX509PublicKeyToCOSE(leafCert);
   const data = fromUTF8String(`${header}.${payload}`);
@@ -262,7 +274,7 @@ export function verifyJWT(jwt: string, leafCert: Uint8Array): Promise<boolean> {
  * Process a JWT into Javascript-friendly data structures
  */
 export function parseJWT<T1, T2>(jwt: string): [T1, T2, string] {
-  const parts = jwt.split('.');
+  const parts = jwt.split(".");
   return [
     JSON.parse(toUTF8String(parts[0])) as T1,
     JSON.parse(toUTF8String(parts[1])) as T2,

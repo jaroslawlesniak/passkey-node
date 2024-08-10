@@ -1,8 +1,25 @@
 import { concat } from "@/lib/uint";
-import { AsnParser, ECDSASigValue } from '@/lib/asn'
-import { isCOSEAlg, isCOSECrv, isCOSEPublicKeyEC2, isCOSEPublicKeyOKP, isCOSEPublicKeyRSA } from "@/lib/cose";
+import { AsnParser, ECDSASigValue } from "@/lib/asn";
+import {
+  isCOSEAlg,
+  isCOSECrv,
+  isCOSEPublicKeyEC2,
+  isCOSEPublicKeyOKP,
+  isCOSEPublicKeyRSA,
+} from "@/lib/cose";
 import { fromBuffer } from "@/lib/base64";
-import { COSEALG, COSECRV, COSEKEYS, COSEPublicKey, COSEPublicKeyEC2, COSEPublicKeyOKP, COSEPublicKeyRSA, SubtleCryptoAlg, SubtleCryptoCrv, SubtleCryptoKeyAlgName } from "@/lib/auth";
+import {
+  COSEALG,
+  COSECRV,
+  COSEKEYS,
+  COSEPublicKey,
+  COSEPublicKeyEC2,
+  COSEPublicKeyOKP,
+  COSEPublicKeyRSA,
+  SubtleCryptoAlg,
+  SubtleCryptoCrv,
+  SubtleCryptoKeyAlgName,
+} from "@/lib/auth";
 
 let webCrypto: Crypto | undefined = undefined;
 
@@ -40,9 +57,9 @@ export async function getRandomValues(array: Uint8Array): Promise<Uint8Array> {
 
 export class MissingWebCrypto extends Error {
   constructor() {
-    const message = 'An instance of the Crypto API could not be located';
+    const message = "An instance of the Crypto API could not be located";
     super(message);
-    this.name = 'MissingWebCrypto';
+    this.name = "MissingWebCrypto";
   }
 }
 
@@ -98,8 +115,8 @@ export async function importKey(opts: {
 
   const { keyData, algorithm } = opts;
 
-  return WebCrypto.subtle.importKey('jwk', keyData, algorithm, false, [
-    'verify',
+  return WebCrypto.subtle.importKey("jwk", keyData, algorithm, false, [
+    "verify",
   ]);
 }
 
@@ -108,16 +125,16 @@ export async function importKey(opts: {
  */
 export function mapCoseAlgToWebCryptoAlg(alg: COSEALG): SubtleCryptoAlg {
   if ([COSEALG.RS1].indexOf(alg) >= 0) {
-    return 'SHA-1';
+    return "SHA-1";
   } else if ([COSEALG.ES256, COSEALG.PS256, COSEALG.RS256].indexOf(alg) >= 0) {
-    return 'SHA-256';
+    return "SHA-256";
   } else if ([COSEALG.ES384, COSEALG.PS384, COSEALG.RS384].indexOf(alg) >= 0) {
-    return 'SHA-384';
+    return "SHA-384";
   } else if (
     [COSEALG.ES512, COSEALG.PS512, COSEALG.RS512, COSEALG.EdDSA].indexOf(alg) >=
-      0
+    0
   ) {
-    return 'SHA-512';
+    return "SHA-512";
   }
 
   throw new Error(`Could not map COSE alg value of ${alg} to a WebCrypto alg`);
@@ -130,19 +147,19 @@ export function mapCoseAlgToWebCryptoKeyAlgName(
   alg: COSEALG,
 ): SubtleCryptoKeyAlgName {
   if ([COSEALG.EdDSA].indexOf(alg) >= 0) {
-    return 'Ed25519';
+    return "Ed25519";
   } else if (
     [COSEALG.ES256, COSEALG.ES384, COSEALG.ES512, COSEALG.ES256K].indexOf(
       alg,
     ) >= 0
   ) {
-    return 'ECDSA';
+    return "ECDSA";
   } else if (
     [COSEALG.RS256, COSEALG.RS384, COSEALG.RS512, COSEALG.RS1].indexOf(alg) >= 0
   ) {
-    return 'RSASSA-PKCS1-v1_5';
+    return "RSASSA-PKCS1-v1_5";
   } else if ([COSEALG.PS256, COSEALG.PS384, COSEALG.PS512].indexOf(alg) >= 0) {
-    return 'RSA-PSS';
+    return "RSA-PSS";
   }
 
   throw new Error(
@@ -155,7 +172,10 @@ export function mapCoseAlgToWebCryptoKeyAlgName(
  *
  * See https://www.w3.org/TR/webauthn-2/#sctn-signature-attestation-types
  */
-export function unwrapEC2Signature(signature: Uint8Array, crv: COSECRV): Uint8Array {
+export function unwrapEC2Signature(
+  signature: Uint8Array,
+  crv: COSECRV,
+): Uint8Array {
   const parsedSignature = AsnParser.parse(signature, ECDSASigValue);
   const rBytes = new Uint8Array(parsedSignature.r);
   const sBytes = new Uint8Array(parsedSignature.s);
@@ -164,10 +184,7 @@ export function unwrapEC2Signature(signature: Uint8Array, crv: COSECRV): Uint8Ar
   const rNormalizedBytes = toNormalizedBytes(rBytes, componentLength);
   const sNormalizedBytes = toNormalizedBytes(sBytes, componentLength);
 
-  const finalSignature = concat([
-    rNormalizedBytes,
-    sNormalizedBytes,
-  ]);
+  const finalSignature = concat([rNormalizedBytes, sNormalizedBytes]);
 
   return finalSignature;
 }
@@ -204,7 +221,10 @@ function getSignatureComponentLength(crv: COSECRV): number {
  * See <https://www.itu.int/rec/T-REC-X.690-202102-I/en>
  * See <https://www.w3.org/TR/WebCryptoAPI/#ecdsa-operations>
  */
-function toNormalizedBytes(bytes: Uint8Array, componentLength: number): Uint8Array {
+function toNormalizedBytes(
+  bytes: Uint8Array,
+  componentLength: number,
+): Uint8Array {
   let normalizedBytes;
   if (bytes.length < componentLength) {
     // In case the bytes are shorter than expected, we need to pad it with leading `0`s.
@@ -212,7 +232,11 @@ function toNormalizedBytes(bytes: Uint8Array, componentLength: number): Uint8Arr
     normalizedBytes.set(bytes, componentLength - bytes.length);
   } else if (bytes.length === componentLength) {
     normalizedBytes = bytes;
-  } else if (bytes.length === componentLength + 1 && bytes[0] === 0 && (bytes[1] & 0x80) === 0x80) {
+  } else if (
+    bytes.length === componentLength + 1 &&
+    bytes[0] === 0 &&
+    (bytes[1] & 0x80) === 0x80
+  ) {
     // The bytes contain a leading `0` to encode that the integer is positive. This leading `0`
     // needs to be removed for compatibility with the SubtleCrypto Web Crypto API.
     normalizedBytes = bytes.subarray(1);
@@ -280,34 +304,34 @@ export async function verifyEC2(opts: {
   const y = cosePublicKey.get(COSEKEYS.y);
 
   if (!alg) {
-    throw new Error('Public key was missing alg (EC2)');
+    throw new Error("Public key was missing alg (EC2)");
   }
 
   if (!crv) {
-    throw new Error('Public key was missing crv (EC2)');
+    throw new Error("Public key was missing crv (EC2)");
   }
 
   if (!x) {
-    throw new Error('Public key was missing x (EC2)');
+    throw new Error("Public key was missing x (EC2)");
   }
 
   if (!y) {
-    throw new Error('Public key was missing y (EC2)');
+    throw new Error("Public key was missing y (EC2)");
   }
 
   let _crv: SubtleCryptoCrv;
   if (crv === COSECRV.P256) {
-    _crv = 'P-256';
+    _crv = "P-256";
   } else if (crv === COSECRV.P384) {
-    _crv = 'P-384';
+    _crv = "P-384";
   } else if (crv === COSECRV.P521) {
-    _crv = 'P-521';
+    _crv = "P-521";
   } else {
     throw new Error(`Unexpected COSE crv value of ${crv} (EC2)`);
   }
 
   const keyData: JsonWebKey = {
-    kty: 'EC',
+    kty: "EC",
     crv: _crv,
     x: fromBuffer(x),
     y: fromBuffer(y),
@@ -321,7 +345,7 @@ export async function verifyEC2(opts: {
      * would then map here to `'RSASSA-PKCS1-v1_5'`. We always want `'ECDSA'` here so we'll
      * hard-code this.
      */
-    name: 'ECDSA',
+    name: "ECDSA",
     namedCurve: _crv,
   };
 
@@ -337,7 +361,7 @@ export async function verifyEC2(opts: {
   }
 
   const verifyAlgorithm: EcdsaParams = {
-    name: 'ECDSA',
+    name: "ECDSA",
     hash: { name: subtleAlg },
   };
 
@@ -358,7 +382,7 @@ export async function verifyOKP(opts: {
   const x = cosePublicKey.get(COSEKEYS.x);
 
   if (!alg) {
-    throw new Error('Public key was missing alg (OKP)');
+    throw new Error("Public key was missing alg (OKP)");
   }
 
   if (!isCOSEAlg(alg)) {
@@ -366,26 +390,26 @@ export async function verifyOKP(opts: {
   }
 
   if (!crv) {
-    throw new Error('Public key was missing crv (OKP)');
+    throw new Error("Public key was missing crv (OKP)");
   }
 
   if (!x) {
-    throw new Error('Public key was missing x (OKP)');
+    throw new Error("Public key was missing x (OKP)");
   }
 
   // Pulled key import steps from here:
   // https://wicg.github.io/webcrypto-secure-curves/#ed25519-operations
   let _crv: SubtleCryptoCrv;
   if (crv === COSECRV.ED25519) {
-    _crv = 'Ed25519';
+    _crv = "Ed25519";
   } else {
     throw new Error(`Unexpected COSE crv value of ${crv} (OKP)`);
   }
 
   const keyData: JsonWebKey = {
-    kty: 'OKP',
+    kty: "OKP",
     crv: _crv,
-    alg: 'EdDSA',
+    alg: "EdDSA",
     x: fromBuffer(x),
     ext: false,
   };
@@ -425,7 +449,7 @@ export async function verifyRSA(opts: {
   const e = cosePublicKey.get(COSEKEYS.e);
 
   if (!alg) {
-    throw new Error('Public key was missing alg (RSA)');
+    throw new Error("Public key was missing alg (RSA)");
   }
 
   if (!isCOSEAlg(alg)) {
@@ -433,16 +457,16 @@ export async function verifyRSA(opts: {
   }
 
   if (!n) {
-    throw new Error('Public key was missing n (RSA)');
+    throw new Error("Public key was missing n (RSA)");
   }
 
   if (!e) {
-    throw new Error('Public key was missing e (RSA)');
+    throw new Error("Public key was missing e (RSA)");
   }
 
   const keyData: JsonWebKey = {
-    kty: 'RSA',
-    alg: '',
+    kty: "RSA",
+    alg: "",
     n: fromBuffer(n),
     e: fromBuffer(e),
     ext: false,
@@ -461,17 +485,17 @@ export async function verifyRSA(opts: {
     keyAlgorithm.hash.name = mapCoseAlgToWebCryptoAlg(shaHashOverride);
   }
 
-  if (keyAlgorithm.name === 'RSASSA-PKCS1-v1_5') {
-    if (keyAlgorithm.hash.name === 'SHA-256') {
-      keyData.alg = 'RS256';
-    } else if (keyAlgorithm.hash.name === 'SHA-384') {
-      keyData.alg = 'RS384';
-    } else if (keyAlgorithm.hash.name === 'SHA-512') {
-      keyData.alg = 'RS512';
-    } else if (keyAlgorithm.hash.name === 'SHA-1') {
-      keyData.alg = 'RS1';
+  if (keyAlgorithm.name === "RSASSA-PKCS1-v1_5") {
+    if (keyAlgorithm.hash.name === "SHA-256") {
+      keyData.alg = "RS256";
+    } else if (keyAlgorithm.hash.name === "SHA-384") {
+      keyData.alg = "RS384";
+    } else if (keyAlgorithm.hash.name === "SHA-512") {
+      keyData.alg = "RS512";
+    } else if (keyAlgorithm.hash.name === "SHA-1") {
+      keyData.alg = "RS1";
     }
-  } else if (keyAlgorithm.name === 'RSA-PSS') {
+  } else if (keyAlgorithm.name === "RSA-PSS") {
     /**
      * salt length. The default value is 20 but the convention is to use hLen, the length of the
      * output of the hash function in bytes. A salt length of zero is permitted and will result in
@@ -482,14 +506,14 @@ export async function verifyRSA(opts: {
      */
     let saltLength = 0;
 
-    if (keyAlgorithm.hash.name === 'SHA-256') {
-      keyData.alg = 'PS256';
+    if (keyAlgorithm.hash.name === "SHA-256") {
+      keyData.alg = "PS256";
       saltLength = 32; // 256 bits => 32 bytes
-    } else if (keyAlgorithm.hash.name === 'SHA-384') {
-      keyData.alg = 'PS384';
+    } else if (keyAlgorithm.hash.name === "SHA-384") {
+      keyData.alg = "PS384";
       saltLength = 48; // 384 bits => 48 bytes
-    } else if (keyAlgorithm.hash.name === 'SHA-512') {
-      keyData.alg = 'PS512';
+    } else if (keyAlgorithm.hash.name === "SHA-512") {
+      keyData.alg = "PS512";
       saltLength = 64; // 512 bits => 64 bytes
     }
 

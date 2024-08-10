@@ -1,6 +1,9 @@
 import { fromBuffer, isBase64URL, trimPadding } from "@/lib/base64";
 import { fromUTF8String } from "@/lib/uint";
-import { GenerateRegistrationOptionsOpts, PublicKeyCredentialCreationOptionsJSON } from "../types";
+import {
+  GenerateRegistrationOptionsOpts,
+  PublicKeyCredentialCreationOptionsJSON,
+} from "../types";
 import { generateChallenge } from "../native";
 import { getRandomValues } from "@/lib/crypto";
 
@@ -12,8 +15,8 @@ import { getRandomValues } from "@/lib/crypto";
  * defaults.
  */
 const defaultAuthenticatorSelection: AuthenticatorSelectionCriteria = {
-  residentKey: 'preferred',
-  userVerification: 'preferred',
+  residentKey: "preferred",
+  userVerification: "preferred",
 };
 
 /**
@@ -66,9 +69,9 @@ export async function generateRegistrationOptions(
     userName,
     userID,
     challenge = await generateChallenge(),
-    userDisplayName = '',
+    userDisplayName = "",
     timeout = 60000,
-    attestationType = 'none',
+    attestationType = "none",
     excludeCredentials = [],
     authenticatorSelection = defaultAuthenticatorSelection,
     extensions,
@@ -78,10 +81,11 @@ export async function generateRegistrationOptions(
   /**
    * Prepare pubKeyCredParams from the array of algorithm ID's
    */
-  const pubKeyCredParams: PublicKeyCredentialParameters[] = supportedAlgorithmIDs.map((id) => ({
-    alg: id,
-    type: 'public-key',
-  }));
+  const pubKeyCredParams: PublicKeyCredentialParameters[] =
+    supportedAlgorithmIDs.map((id) => ({
+      alg: id,
+      type: "public-key",
+    }));
 
   /**
    * Capture some of the nuances of how `residentKey` and `requireResidentKey` how either is set
@@ -95,7 +99,7 @@ export async function generateRegistrationOptions(
      * See https://www.w3.org/TR/webauthn-2/#dom-authenticatorselectioncriteria-residentkey
      */
     if (authenticatorSelection.requireResidentKey) {
-      authenticatorSelection.residentKey = 'required';
+      authenticatorSelection.residentKey = "required";
     } else {
       /**
        * FIDO Conformance v1.7.2 fails the first test if we do this, even though this is
@@ -112,14 +116,15 @@ export async function generateRegistrationOptions(
      *
      * See https://www.w3.org/TR/webauthn-2/#dom-authenticatorselectioncriteria-requireresidentkey
      */
-    authenticatorSelection.requireResidentKey = authenticatorSelection.residentKey === 'required';
+    authenticatorSelection.requireResidentKey =
+      authenticatorSelection.residentKey === "required";
   }
 
   /**
    * Preserve ability to specify `string` values for challenges
    */
   let _challenge = challenge;
-  if (typeof _challenge === 'string') {
+  if (typeof _challenge === "string") {
     _challenge = fromUTF8String(_challenge);
   }
 
@@ -127,7 +132,7 @@ export async function generateRegistrationOptions(
    * Explicitly disallow use of strings for userID anymore because `isoBase64URL.fromBuffer()` below
    * will return an empty string if one gets through!
    */
-  if (typeof userID === 'string') {
+  if (typeof userID === "string") {
     throw new Error(
       `String values for \`userID\` are no longer supported. See https://simplewebauthn.dev/docs/advanced/server/custom-user-ids`,
     );
@@ -157,13 +162,15 @@ export async function generateRegistrationOptions(
     attestation: attestationType,
     excludeCredentials: excludeCredentials.map((cred) => {
       if (!isBase64URL(cred.id)) {
-        throw new Error(`excludeCredential id "${cred.id}" is not a valid base64url string`);
+        throw new Error(
+          `excludeCredential id "${cred.id}" is not a valid base64url string`,
+        );
       }
 
       return {
         ...cred,
         id: trimPadding(cred.id),
-        type: 'public-key',
+        type: "public-key",
       };
     }),
     authenticatorSelection,

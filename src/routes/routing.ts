@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import express, { Router } from "express";
 
 export const withRouter = (config: (router: Router) => void) => {
   const router = express.Router();

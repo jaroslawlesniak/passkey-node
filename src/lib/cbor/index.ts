@@ -1,4 +1,4 @@
-import { CBORType, decodePartialCBOR, encodeCBOR } from '@levischuck/tiny-cbor';
+import { CBORType, decodePartialCBOR, encodeCBOR } from "@levischuck/tiny-cbor";
 
 /**
  * Whatever CBOR encoder is used should keep CBOR data the same length when data is re-encoded

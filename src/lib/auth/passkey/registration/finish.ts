@@ -1,9 +1,31 @@
 import { fromBuffer, toBuffer, toUTF8String } from "@/lib/base64";
-import { AttestationFormatVerifierOpts, AttestationObject, Base64URLString, ClientDataJSON, COSEKEYS, VerifiedRegistrationResponse, VerifyRegistrationResponseOpts } from "../types";
+import {
+  AttestationFormatVerifierOpts,
+  AttestationObject,
+  Base64URLString,
+  ClientDataJSON,
+  COSEKEYS,
+  VerifiedRegistrationResponse,
+  VerifyRegistrationResponseOpts,
+} from "../types";
 import { supportedCOSEAlgorithmIdentifiers } from "./algorithms";
 import { decodeFirst } from "@/lib/cbor";
-import { convertAAGUIDToString, decodeCredentialPublicKey, matchExpectedRPID, parseAuthenticatorData, parseBackupFlags, toHash } from "../utils";
-import { verifyAttestationAndroidKey, verifyAttestationAndroidSafetyNet, verifyAttestationApple, verifyAttestationFIDOU2F, verifyAttestationPacked, verifyAttestationTPM } from "./verifications";
+import {
+  convertAAGUIDToString,
+  decodeCredentialPublicKey,
+  matchExpectedRPID,
+  parseAuthenticatorData,
+  parseBackupFlags,
+  toHash,
+} from "../utils";
+import {
+  verifyAttestationAndroidKey,
+  verifyAttestationAndroidSafetyNet,
+  verifyAttestationApple,
+  verifyAttestationFIDOU2F,
+  verifyAttestationPacked,
+  verifyAttestationTPM,
+} from "./verifications";
 import { SettingsService } from "./services";
 
 /**
@@ -52,20 +74,25 @@ export async function verifyRegistrationResponse(
     requireUserVerification = true,
     supportedAlgorithmIDs = supportedCOSEAlgorithmIdentifiers,
   } = options;
-  const { id, rawId, type: credentialType, response: attestationResponse } = response;
+  const {
+    id,
+    rawId,
+    type: credentialType,
+    response: attestationResponse,
+  } = response;
 
   // Ensure credential specified an ID
   if (!id) {
-    throw new Error('Missing credential ID');
+    throw new Error("Missing credential ID");
   }
 
   // Ensure ID is base64url-encoded
   if (id !== rawId) {
-    throw new Error('Credential ID was not base64url-encoded');
+    throw new Error("Credential ID was not base64url-encoded");
   }
 
   // Make sure credential type is public-key
-  if (credentialType !== 'public-key') {
+  if (credentialType !== "public-key") {
     throw new Error(
       `Unexpected credential type ${credentialType}, expected "public-key"`,
     );
@@ -80,7 +107,7 @@ export async function verifyRegistrationResponse(
   // Make sure we're handling an registration
   if (Array.isArray(expectedType)) {
     if (!expectedType.includes(type)) {
-      const joinedExpectedType = expectedType.join(', ');
+      const joinedExpectedType = expectedType.join(", ");
       throw new Error(
         `Unexpected registration response type "${type}", expected one of: ${joinedExpectedType}`,
       );
@@ -91,12 +118,12 @@ export async function verifyRegistrationResponse(
         `Unexpected registration response type "${type}", expected "${expectedType}"`,
       );
     }
-  } else if (type !== 'webauthn.create') {
+  } else if (type !== "webauthn.create") {
     throw new Error(`Unexpected registration response type: ${type}`);
   }
 
   // Ensure the device provided the challenge we gave it
-  if (typeof expectedChallenge === 'function') {
+  if (typeof expectedChallenge === "function") {
     if (!(await expectedChallenge(challenge))) {
       throw new Error(
         `Custom challenge verifier returned false for registration response challenge "${challenge}"`,
@@ -112,11 +139,9 @@ export async function verifyRegistrationResponse(
   if (Array.isArray(expectedOrigin)) {
     if (!expectedOrigin.includes(origin)) {
       throw new Error(
-        `Unexpected registration response origin "${origin}", expected one of: ${
-          expectedOrigin.join(
-            ', ',
-          )
-        }`,
+        `Unexpected registration response origin "${origin}", expected one of: ${expectedOrigin.join(
+          ", ",
+        )}`,
       );
     }
   } else {
@@ -128,12 +153,12 @@ export async function verifyRegistrationResponse(
   }
 
   if (tokenBinding) {
-    if (typeof tokenBinding !== 'object') {
+    if (typeof tokenBinding !== "object") {
       throw new Error(`Unexpected value for TokenBinding "${tokenBinding}"`);
     }
 
     if (
-      ['present', 'supported', 'not-supported'].indexOf(tokenBinding.status) < 0
+      ["present", "supported", "not-supported"].indexOf(tokenBinding.status) < 0
     ) {
       throw new Error(
         `Unexpected tokenBinding.status value of "${tokenBinding.status}"`,
@@ -141,13 +166,11 @@ export async function verifyRegistrationResponse(
     }
   }
 
-  const attestationObject = toBuffer(
-    attestationResponse.attestationObject,
-  );
+  const attestationObject = toBuffer(attestationResponse.attestationObject);
   const decodedAttestationObject = decodeAttestationObject(attestationObject);
-  const fmt = decodedAttestationObject.get('fmt');
-  const authData = decodedAttestationObject.get('authData');
-  const attStmt = decodedAttestationObject.get('attStmt');
+  const fmt = decodedAttestationObject.get("fmt");
+  const authData = decodedAttestationObject.get("authData");
+  const attStmt = decodedAttestationObject.get("attStmt");
 
   const parsedAuthData = parseAuthenticatorData(authData);
   const {
@@ -164,7 +187,7 @@ export async function verifyRegistrationResponse(
   let matchedRPID: string | undefined;
   if (expectedRPID) {
     let expectedRPIDs: string[] = [];
-    if (typeof expectedRPID === 'string') {
+    if (typeof expectedRPID === "string") {
       expectedRPIDs = [expectedRPID];
     } else {
       expectedRPIDs = expectedRPID;
@@ -175,38 +198,38 @@ export async function verifyRegistrationResponse(
 
   // Make sure someone was physically present
   if (!flags.up) {
-    throw new Error('User not present during registration');
+    throw new Error("User not present during registration");
   }
 
   // Enforce user verification if specified
   if (requireUserVerification && !flags.uv) {
     throw new Error(
-      'User verification required, but user could not be verified',
+      "User verification required, but user could not be verified",
     );
   }
 
   if (!credentialID) {
-    throw new Error('No credential ID was provided by authenticator');
+    throw new Error("No credential ID was provided by authenticator");
   }
 
   if (!credentialPublicKey) {
-    throw new Error('No public key was provided by authenticator');
+    throw new Error("No public key was provided by authenticator");
   }
 
   if (!aaguid) {
-    throw new Error('No AAGUID was present during registration');
+    throw new Error("No AAGUID was present during registration");
   }
 
   const decodedPublicKey = decodeCredentialPublicKey(credentialPublicKey);
   const alg = decodedPublicKey.get(COSEKEYS.alg);
 
-  if (typeof alg !== 'number') {
-    throw new Error('Credential public key was missing numeric alg');
+  if (typeof alg !== "number") {
+    throw new Error("Credential public key was missing numeric alg");
   }
 
   // Make sure the key algorithm is one we specified within the registration options
   if (!supportedAlgorithmIDs.includes(alg as number)) {
-    const supported = supportedAlgorithmIDs.join(', ');
+    const supported = supportedAlgorithmIDs.join(", ");
     throw new Error(
       `Unexpected public key alg "${alg}", expected one of "${supported}"`,
     );
@@ -235,21 +258,21 @@ export async function verifyRegistrationResponse(
    * Verification can only be performed when attestation = 'direct'
    */
   let verified = false;
-  if (fmt === 'fido-u2f') {
+  if (fmt === "fido-u2f") {
     verified = await verifyAttestationFIDOU2F(verifierOpts);
-  } else if (fmt === 'packed') {
+  } else if (fmt === "packed") {
     verified = await verifyAttestationPacked(verifierOpts);
-  } else if (fmt === 'android-safetynet') {
+  } else if (fmt === "android-safetynet") {
     verified = await verifyAttestationAndroidSafetyNet(verifierOpts);
-  } else if (fmt === 'android-key') {
+  } else if (fmt === "android-key") {
     verified = await verifyAttestationAndroidKey(verifierOpts);
-  } else if (fmt === 'tpm') {
+  } else if (fmt === "tpm") {
     verified = await verifyAttestationTPM(verifierOpts);
-  } else if (fmt === 'apple') {
+  } else if (fmt === "apple") {
     verified = await verifyAttestationApple(verifierOpts);
-  } else if (fmt === 'none') {
+  } else if (fmt === "none") {
     if (attStmt.size > 0) {
-      throw new Error('None attestation had unexpected attestation statement');
+      throw new Error("None attestation had unexpected attestation statement");
     }
     // This is the weaker of the attestations, so there's nothing else to really check
     verified = true;
@@ -262,9 +285,8 @@ export async function verifyRegistrationResponse(
   };
 
   if (toReturn.verified) {
-    const { credentialDeviceType, credentialBackedUp } = parseBackupFlags(
-      flags,
-    );
+    const { credentialDeviceType, credentialBackedUp } =
+      parseBackupFlags(flags);
 
     toReturn.registrationInfo = {
       fmt,

@@ -7,13 +7,15 @@ const defaults: Partial<PublicKeyCredentialRequestOptionsJSON> = {
   rpId,
   timeout: 60000,
   allowCredentials: [], // not yet supported
-  userVerification: 'required',
+  userVerification: "required",
   extensions: {},
 };
 
-const toPublicKeyCredentialRequest = (challenge: Uint8Array): PublicKeyCredentialRequestOptionsJSON => ({
+const toPublicKeyCredentialRequest = (
+  challenge: Uint8Array,
+): PublicKeyCredentialRequestOptionsJSON => ({
   ...defaults,
-  challenge: fromBuffer(challenge, 'base64url'),
+  challenge: fromBuffer(challenge, "base64url"),
 });
 
 /**
@@ -28,5 +30,6 @@ const toPublicKeyCredentialRequest = (challenge: Uint8Array): PublicKeyCredentia
  * @param userVerification **(Optional)** - Set to `'discouraged'` when asserting as part of a 2FA flow, otherwise set to `'preferred'` or `'required'` as desired. Defaults to `"preferred"`
  * @param extensions **(Optional)** - Additional plugins the authenticator or browser should use during authentication
  */
-export const generateAuthenticationOptions = (): Promise<PublicKeyCredentialRequestOptionsJSON> =>
-  generateChallenge().then(toPublicKeyCredentialRequest);
+export const generateAuthenticationOptions =
+  (): Promise<PublicKeyCredentialRequestOptionsJSON> =>
+    generateChallenge().then(toPublicKeyCredentialRequest);

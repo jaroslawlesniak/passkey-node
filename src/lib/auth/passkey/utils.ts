@@ -1,18 +1,44 @@
-import { areEqual, fromASCIIString, fromHex, fromUTF8String, toDataView, toHex } from "@/lib/uint";
-import { AuthenticationExtensionsAuthenticatorOutputs, COSEALG, COSECRV, COSEKEYS, COSEKTY, COSEPublicKey, COSEPublicKeyEC2, COSEPublicKeyRSA, CredentialDeviceType, ParsedAuthenticatorData } from "./types";
+import {
+  areEqual,
+  fromASCIIString,
+  fromHex,
+  fromUTF8String,
+  toDataView,
+  toHex,
+} from "@/lib/uint";
+import {
+  AuthenticationExtensionsAuthenticatorOutputs,
+  COSEALG,
+  COSECRV,
+  COSEKEYS,
+  COSEKTY,
+  COSEPublicKey,
+  COSEPublicKeyEC2,
+  COSEPublicKeyRSA,
+  CredentialDeviceType,
+  ParsedAuthenticatorData,
+} from "./types";
 import { decodeFirst, encode } from "@/lib/cbor";
 import { digest, verify } from "@/lib/crypto";
-import {  } from "@/lib/crypto";
-import { AsnParser, Certificate, ECParameters, id_ecPublicKey, id_secp256r1, id_secp384r1, RSAPublicKey } from '@/lib/asn'
+import {} from "@/lib/crypto";
+import {
+  AsnParser,
+  Certificate,
+  ECParameters,
+  id_ecPublicKey,
+  id_secp256r1,
+  id_secp384r1,
+  RSAPublicKey,
+} from "@/lib/asn";
 
 /**
  * CBOR-encoded extensions can be deeply-nested Maps, which are too deep for a simple
  * `Object.entries()`. This method will recursively make sure that all Maps are converted into
  * basic objects.
  */
-function convertMapToObjectDeep(
-  input: Map<string, unknown>,
-): { [key: string]: unknown } {
+function convertMapToObjectDeep(input: Map<string, unknown>): {
+  [key: string]: unknown;
+} {
   const mapped: { [key: string]: unknown } = {};
 
   for (const [key, value] of input) {
@@ -60,9 +86,9 @@ export function parseAuthenticatorData(
   let pointer = 0;
   const dataView = toDataView(authData);
 
-  const rpIdHash = authData.slice(pointer, pointer += 32);
+  const rpIdHash = authData.slice(pointer, (pointer += 32));
 
-  const flagsBuf = authData.slice(pointer, pointer += 1);
+  const flagsBuf = authData.slice(pointer, (pointer += 1));
   const flagsInt = flagsBuf[0];
 
   // Bit positions can be referenced here:
@@ -86,12 +112,12 @@ export function parseAuthenticatorData(
   let credentialPublicKey: Uint8Array | undefined = undefined;
 
   if (flags.at) {
-    aaguid = authData.slice(pointer, pointer += 16);
+    aaguid = authData.slice(pointer, (pointer += 16));
 
     const credIDLen = dataView.getUint16(pointer);
     pointer += 2;
 
-    credentialID = authData.slice(pointer, pointer += credIDLen);
+    credentialID = authData.slice(pointer, (pointer += credIDLen));
 
     /**
      * Firefox 117 incorrectly CBOR-encodes authData when EdDSA (-8) is used for the public key.
@@ -103,8 +129,11 @@ export function parseAuthenticatorData(
      * in the hex below looks so odd.
      */
     // Bytes decode to `{ 1: "OKP", 3: -8, -1: "Ed25519" }` (it's missing key -2 a.k.a. COSEKEYS.x)
-    const badEdDSACBOR = fromHex('a301634f4b500327206745643235353139');
-    const bytesAtCurrentPosition = authData.slice(pointer, pointer + badEdDSACBOR.byteLength);
+    const badEdDSACBOR = fromHex("a301634f4b500327206745643235353139");
+    const bytesAtCurrentPosition = authData.slice(
+      pointer,
+      pointer + badEdDSACBOR.byteLength,
+    );
     let foundBadCBOR = false;
     if (areEqual(badEdDSACBOR, bytesAtCurrentPosition)) {
       // Change the bad CBOR 0xa3 to 0xa4 so that the credential public key can be recognized
@@ -113,9 +142,7 @@ export function parseAuthenticatorData(
     }
 
     // Decode the next CBOR item in the buffer, then re-encode it back to a Buffer
-    const firstDecoded = decodeFirst<COSEPublicKey>(
-      authData.slice(pointer),
-    );
+    const firstDecoded = decodeFirst<COSEPublicKey>(authData.slice(pointer));
     const firstEncoded = Uint8Array.from(
       /**
        * Casting to `Map` via `as unknown` here because TS doesn't make it possible to define Maps
@@ -138,7 +165,8 @@ export function parseAuthenticatorData(
     pointer += firstEncoded.byteLength;
   }
 
-  let extensionsData: AuthenticationExtensionsAuthenticatorOutputs | undefined = undefined;
+  let extensionsData: AuthenticationExtensionsAuthenticatorOutputs | undefined =
+    undefined;
   let extensionsDataBuffer: Uint8Array | undefined = undefined;
 
   if (flags.ed) {
@@ -147,7 +175,9 @@ export function parseAuthenticatorData(
      * more diligently parse via `decodeAuthenticatorExtensions()` so :shrug:
      */
     type AuthenticatorExtensionData = Map<string, Uint8Array>;
-    const firstDecoded = decodeFirst<AuthenticatorExtensionData>(authData.slice(pointer));
+    const firstDecoded = decodeFirst<AuthenticatorExtensionData>(
+      authData.slice(pointer),
+    );
     extensionsDataBuffer = Uint8Array.from(encode(firstDecoded));
     extensionsData = decodeAuthenticatorExtensions(extensionsDataBuffer);
     pointer += extensionsDataBuffer.byteLength;
@@ -155,7 +185,7 @@ export function parseAuthenticatorData(
 
   // Pointer should be at the end of the authenticator data, otherwise too much data was sent
   if (authData.byteLength > pointer) {
-    throw new Error('Leftover bytes detected while parsing authenticator data');
+    throw new Error("Leftover bytes detected while parsing authenticator data");
   }
 
   return {
@@ -180,7 +210,7 @@ export function toHash(
   data: Uint8Array | string,
   algorithm: COSEALG = -7,
 ): Promise<Uint8Array> {
-  if (typeof data === 'string') {
+  if (typeof data === "string") {
     data = fromUTF8String(data);
   }
 
@@ -197,15 +227,13 @@ export async function matchExpectedRPID(
     const matchedRPID = await Promise.any<string>(
       expectedRPIDs.map((expected) => {
         return new Promise((resolve, reject) => {
-          toHash(fromASCIIString(expected)).then(
-            (expectedRPIDHash) => {
-              if (areEqual(rpIDHash, expectedRPIDHash)) {
-                resolve(expected);
-              } else {
-                reject();
-              }
-            },
-          );
+          toHash(fromASCIIString(expected)).then((expectedRPIDHash) => {
+            if (areEqual(rpIDHash, expectedRPIDHash)) {
+              resolve(expected);
+            } else {
+              reject();
+            }
+          });
         });
       }),
     );
@@ -215,7 +243,7 @@ export async function matchExpectedRPID(
     const _err = err as Error;
 
     // This means no matches were found
-    if (_err.name === 'AggregateError') {
+    if (_err.name === "AggregateError") {
       throw new UnexpectedRPIDHash();
     }
 
@@ -226,9 +254,9 @@ export async function matchExpectedRPID(
 
 class UnexpectedRPIDHash extends Error {
   constructor() {
-    const message = 'Unexpected RP ID hash';
+    const message = "Unexpected RP ID hash";
     super(message);
-    this.name = 'UnexpectedRPIDHash';
+    this.name = "UnexpectedRPIDHash";
   }
 }
 
@@ -243,19 +271,19 @@ export function mapX509SignatureAlgToCOSEAlg(
 ): COSEALG {
   let alg: COSEALG;
 
-  if (signatureAlgorithm === '1.2.840.10045.4.3.2') {
+  if (signatureAlgorithm === "1.2.840.10045.4.3.2") {
     alg = COSEALG.ES256;
-  } else if (signatureAlgorithm === '1.2.840.10045.4.3.3') {
+  } else if (signatureAlgorithm === "1.2.840.10045.4.3.3") {
     alg = COSEALG.ES384;
-  } else if (signatureAlgorithm === '1.2.840.10045.4.3.4') {
+  } else if (signatureAlgorithm === "1.2.840.10045.4.3.4") {
     alg = COSEALG.ES512;
-  } else if (signatureAlgorithm === '1.2.840.113549.1.1.11') {
+  } else if (signatureAlgorithm === "1.2.840.113549.1.1.11") {
     alg = COSEALG.RS256;
-  } else if (signatureAlgorithm === '1.2.840.113549.1.1.12') {
+  } else if (signatureAlgorithm === "1.2.840.113549.1.1.12") {
     alg = COSEALG.RS384;
-  } else if (signatureAlgorithm === '1.2.840.113549.1.1.13') {
+  } else if (signatureAlgorithm === "1.2.840.113549.1.1.13") {
     alg = COSEALG.RS512;
-  } else if (signatureAlgorithm === '1.2.840.113549.1.1.5') {
+  } else if (signatureAlgorithm === "1.2.840.113549.1.1.5") {
     alg = COSEALG.RS1;
   } else {
     throw new Error(
@@ -293,7 +321,7 @@ export function convertX509PublicKeyToCOSE(
      * EC2 Public Key
      */
     if (!subjectPublicKeyInfo.algorithm.parameters) {
-      throw new Error('Certificate public key was missing parameters (EC2)');
+      throw new Error("Certificate public key was missing parameters (EC2)");
     }
 
     const ecParameters = AsnParser.parse(
@@ -324,7 +352,7 @@ export function convertX509PublicKeyToCOSE(
       // Public key is in "uncompressed form", so we can split the remaining bytes in half
       let pointer = 1;
       const halfLength = (subjectPublicKey.length - 1) / 2;
-      x = subjectPublicKey.slice(pointer, pointer += halfLength);
+      x = subjectPublicKey.slice(pointer, (pointer += halfLength));
       y = subjectPublicKey.slice(pointer);
     } else {
       throw new Error(
@@ -343,7 +371,7 @@ export function convertX509PublicKeyToCOSE(
     coseEC2PubKey.set(COSEKEYS.y, y);
 
     cosePublicKey = coseEC2PubKey;
-  } else if (publicKeyAlgorithmID === '1.2.840.113549.1.1.1') {
+  } else if (publicKeyAlgorithmID === "1.2.840.113549.1.1.1") {
     /**
      * RSA public key
      */
@@ -428,25 +456,25 @@ export function parseBackupFlags({ be, bs }: { be: boolean; bs: boolean }): {
   credentialBackedUp: boolean;
 } {
   const credentialBackedUp = bs;
-  let credentialDeviceType: CredentialDeviceType = 'singleDevice';
+  let credentialDeviceType: CredentialDeviceType = "singleDevice";
 
   if (be) {
-    credentialDeviceType = 'multiDevice';
+    credentialDeviceType = "multiDevice";
   }
 
-  if (credentialDeviceType === 'singleDevice' && credentialBackedUp) {
+  if (credentialDeviceType === "singleDevice" && credentialBackedUp) {
     throw new InvalidBackupFlags(
-      'Single-device credential indicated that it was backed up, which should be impossible.',
+      "Single-device credential indicated that it was backed up, which should be impossible.",
     );
   }
 
   return { credentialDeviceType, credentialBackedUp };
 }
 
- class InvalidBackupFlags extends Error {
+class InvalidBackupFlags extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'InvalidBackupFlags';
+    this.name = "InvalidBackupFlags";
   }
 }
 
@@ -466,5 +494,5 @@ export function convertAAGUIDToString(aaguid: Uint8Array): string {
   ];
 
   // Formatted: adce0002-35bc-c60a-648b-0b25f1f05503
-  return segments.join('-');
+  return segments.join("-");
 }

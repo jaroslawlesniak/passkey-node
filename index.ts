@@ -1,8 +1,8 @@
-require('module-alias/register')
+import "module-alias/register";
 
 import dotenv from "dotenv";
 
-import server from './server';
+import server from "./server";
 
 dotenv.config();
 

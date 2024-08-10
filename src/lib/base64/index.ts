@@ -1,5 +1,5 @@
-import base64 from '@hexagon/base64';
-import type { Base64URLString } from '../auth';
+import base64 from "@hexagon/base64";
+import type { Base64URLString } from "../auth";
 
 /**
  * Decode from a Base64URL-encoded string to an ArrayBuffer. Best used when converting a
@@ -11,9 +11,9 @@ import type { Base64URLString } from '../auth';
  */
 export function toBuffer(
   base64urlString: string,
-  from: 'base64' | 'base64url' = 'base64url',
+  from: "base64" | "base64url" = "base64url",
 ): Uint8Array {
-  const _buffer = base64.toArrayBuffer(base64urlString, from === 'base64url');
+  const _buffer = base64.toArrayBuffer(base64urlString, from === "base64url");
   return new Uint8Array(_buffer);
 }
 
@@ -26,9 +26,9 @@ export function toBuffer(
  */
 export function fromBuffer(
   buffer: Uint8Array,
-  to: 'base64' | 'base64url' = 'base64url',
+  to: "base64" | "base64url" = "base64url",
 ): string {
-  return base64.fromArrayBuffer(buffer, to === 'base64url');
+  return base64.fromArrayBuffer(buffer, to === "base64url");
 }
 
 /**
@@ -74,5 +74,5 @@ export function isBase64URL(input: string): boolean {
  * Remove optional padding from a base64url-encoded string
  */
 export function trimPadding(input: Base64URLString): Base64URLString {
-  return input.replace(/=/g, '');
+  return input.replace(/=/g, "");
 }

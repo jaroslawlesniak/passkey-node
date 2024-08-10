@@ -1,4 +1,4 @@
-export { AsnParser, AsnSerializer } from '@peculiar/asn1-schema'
+export { AsnParser, AsnSerializer } from "@peculiar/asn1-schema";
 export {
   AuthorityKeyIdentifier,
   BasicConstraints,
@@ -15,13 +15,13 @@ export {
   Name,
   SubjectAlternativeName,
   SubjectKeyIdentifier,
-} from '@peculiar/asn1-x509';
+} from "@peculiar/asn1-x509";
 export {
   ECDSASigValue,
   ECParameters,
   id_ecPublicKey,
   id_secp256r1,
   id_secp384r1,
-} from '@peculiar/asn1-ecc';
-export { RSAPublicKey } from '@peculiar/asn1-rsa';
-export { id_ce_keyDescription, KeyDescription } from '@peculiar/asn1-android';
+} from "@peculiar/asn1-ecc";
+export { RSAPublicKey } from "@peculiar/asn1-rsa";
+export { id_ce_keyDescription, KeyDescription } from "@peculiar/asn1-android";

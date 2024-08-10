@@ -4,7 +4,13 @@ import type { CreatePayload, UpdatePayload } from "./types";
 
 import { prisma } from "../client";
 
-export const create = ({ counter, publicKey, transports, userId, credentialId }: CreatePayload) =>
+export const create = ({
+  counter,
+  publicKey,
+  transports,
+  userId,
+  credentialId,
+}: CreatePayload) =>
   prisma.credential.create({
     data: {
       token: uuid(),
@@ -13,8 +19,8 @@ export const create = ({ counter, publicKey, transports, userId, credentialId }:
       publicKey,
       credentialId,
       transports,
-    }
-  })
+    },
+  });
 
 export const getById = (id: number) =>
   prisma.credential.findFirstOrThrow({
