@@ -42,6 +42,7 @@ import {
   SafetyNetJWTSignature,
 } from "../types";
 import { decodeCredentialPublicKey, toHash, verifySignature } from "../utils";
+import { mapAsync } from "./async";
 import {
   getCertificateInfo,
   parseCertInfo,
@@ -59,9 +60,9 @@ import { MetadataService } from "./services";
 /**
  * Convert buffer to an OpenSSL-compatible PEM text format.
  */
-export function convertCertBufferToPEM(
+export async function convertCertBufferToPEM(
   certBuffer: Uint8Array | Base64URLString,
-): string {
+): Promise<string> {
   let b64cert: string;
 
   /**
@@ -69,7 +70,7 @@ export function convertCertBufferToPEM(
    */
   if (typeof certBuffer === "string") {
     if (isBase64URL(certBuffer)) {
-      b64cert = toBase64(certBuffer);
+      b64cert = await toBase64(certBuffer);
     } else if (isBase64(certBuffer)) {
       b64cert = certBuffer;
     } else {
@@ -166,7 +167,7 @@ export async function verifyAttestationFIDOU2F(
   try {
     // Try validating the certificate path using the root certificates set via SettingsService
     await validateCertificatePath(
-      x5c.map(convertCertBufferToPEM),
+      await mapAsync(x5c, convertCertBufferToPEM),
       rootCertificates,
     );
   } catch (err) {
@@ -302,7 +303,7 @@ export async function verifyAttestationPacked(
       try {
         // Try validating the certificate path using the root certificates set via SettingsService
         await validateCertificatePath(
-          x5c.map(convertCertBufferToPEM),
+          await mapAsync(x5c, convertCertBufferToPEM),
           rootCertificates,
         );
       } catch (err) {
@@ -442,7 +443,7 @@ export async function verifyAttestationAndroidSafetyNet(
     try {
       // Try validating the certificate path using the root certificates set via SettingsService
       await validateCertificatePath(
-        HEADER.x5c.map(convertCertBufferToPEM),
+        await mapAsync(HEADER.x5c, convertCertBufferToPEM),
         rootCertificates,
       );
     } catch (err) {
@@ -583,7 +584,7 @@ export async function verifyAttestationAndroidKey(
     try {
       // Try validating the certificate path using the root certificates set via SettingsService
       await validateCertificatePath(
-        x5c.map(convertCertBufferToPEM),
+        await mapAsync(x5c, convertCertBufferToPEM),
         rootCertificates,
       );
     } catch (err) {
@@ -1037,7 +1038,7 @@ export async function verifyAttestationTPM(
     try {
       // Try validating the certificate path using the root certificates set via SettingsService
       await validateCertificatePath(
-        x5c.map(convertCertBufferToPEM),
+        await mapAsync(x5c, convertCertBufferToPEM),
         rootCertificates,
       );
     } catch (err) {
@@ -1163,7 +1164,7 @@ export async function verifyAttestationApple(
    */
   try {
     await validateCertificatePath(
-      x5c.map(convertCertBufferToPEM),
+      await mapAsync(x5c, convertCertBufferToPEM),
       rootCertificates,
     );
   } catch (err) {

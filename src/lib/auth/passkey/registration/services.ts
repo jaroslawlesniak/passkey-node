@@ -9,6 +9,7 @@ import {
   VerificationMode,
 } from "../types";
 import { convertAAGUIDToString } from "../utils";
+import { mapAsync } from "./async";
 import {
   Apple_WebAuthn_Root_CA,
   GlobalSign_Root_CA,
@@ -36,16 +37,16 @@ class BaseSettingsService {
    * Certificates can be specified as a raw `Buffer`, or as a PEM-formatted string. If a
    * `Buffer` is passed in it will be converted to PEM format.
    */
-  setRootCertificates(opts: {
+  async setRootCertificates(opts: {
     identifier: RootCertIdentifier;
     certificates: (Uint8Array | string)[];
-  }): void {
+  }): Promise<void> {
     const { identifier, certificates } = opts;
 
     const newCertificates: string[] = [];
     for (const cert of certificates) {
       if (cert instanceof Uint8Array) {
-        newCertificates.push(convertCertBufferToPEM(cert));
+        newCertificates.push(await convertCertBufferToPEM(cert));
       } else {
         newCertificates.push(cert);
       }
@@ -274,7 +275,7 @@ export class BaseMetadataService {
       );
     }
 
-    const headerCertsPEM = header.x5c.map(convertCertBufferToPEM);
+    const headerCertsPEM = await mapAsync(header.x5c, convertCertBufferToPEM);
     try {
       // Validate the certificate chain
       const rootCerts = SettingsService.getRootCertificates({
