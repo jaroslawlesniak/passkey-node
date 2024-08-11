@@ -7,7 +7,6 @@ import {
   COSEPublicKeyEC2,
   COSEPublicKeyOKP,
   COSEPublicKeyRSA,
-  CryptoKey,
   SubtleCryptoAlg,
   SubtleCryptoCrv,
   SubtleCryptoKeyAlgName,
@@ -22,154 +21,150 @@ import {
 } from "@/lib/cose";
 import { concat } from "@/lib/uint";
 
-import {
-  Algorithm,
-  CryptoApiFoundCallback,
-  CryptoApiNotFoundCallback,
-  ImportKeyPayload,
-  Key,
-  KeyUsage,
-} from "./types";
-
 let webCrypto: Crypto | undefined = undefined;
 
-class CryptoApiNotFoundError extends Error {
-  constructor() {
-    super("Crypto API not found");
+/**
+ * Generate a digest of the provided data.
+ *
+ * @param data The data to generate a digest of
+ * @param algorithm A COSE algorithm ID that maps to a desired SHA algorithm
+ */
+export async function digest(
+  data: Uint8Array,
+  algorithm: COSEALG,
+): Promise<Uint8Array> {
+  const WebCrypto = await getWebCrypto();
 
-    this.name = "CryptoApiNotFound";
+  const subtleAlgorithm = mapCoseAlgToWebCryptoAlg(algorithm);
+
+  const hashed = await WebCrypto.subtle.digest(subtleAlgorithm, data);
+
+  return new Uint8Array(hashed);
+}
+
+/**
+ * Fill up the provided bytes array with random bytes equal to its length.
+ *
+ * @returns the same bytes array passed into the method
+ */
+export async function getRandomValues(array: Uint8Array): Promise<Uint8Array> {
+  const WebCrypto = await getWebCrypto();
+
+  WebCrypto.getRandomValues(array);
+
+  return array;
+}
+
+export class MissingWebCrypto extends Error {
+  constructor() {
+    const message = "An instance of the Crypto API could not be located";
+    super(message);
+    this.name = "MissingWebCrypto";
   }
 }
 
-export const digest = (
-  data: Uint8Array,
-  algorithm: COSEALG,
-): Promise<Uint8Array> =>
-  Promise.all([getWebCrypto(), mapCoseAlgToWebCryptoAlg(algorithm)])
-    .then(([crypto, cryptoAlgorithm]) =>
-      crypto.subtle.digest(cryptoAlgorithm, data),
-    )
-    .then((hash) => new Uint8Array(hash));
-
-export const getRandomValues = (array: Uint8Array): Promise<Uint8Array> =>
-  getWebCrypto()
-    .then((crypto) => crypto.getRandomValues(array))
-    .then(() => array); // uhh, we are modifying original array
-
-const tryGetCachedCryptoApi = (resolve: CryptoApiFoundCallback) =>
-  webCrypto && resolve(webCrypto);
-
-const tryGetNativeCryptoApi = (resolve: CryptoApiFoundCallback) => {
-  const nativeLibrary = globalThis.crypto;
-
-  if (nativeLibrary) {
-    webCrypto = nativeLibrary;
-
-    return resolve(nativeLibrary);
-  }
+// Make it possible to stub return values during testing
+export const _getWebCryptoInternals = {
+  stubThisGlobalThisCrypto: () => globalThis.crypto,
+  // Make it possible to reset the `webCrypto` at the top of the file
+  setCachedCrypto: (newCrypto: Crypto | undefined) => {
+    webCrypto = newCrypto;
+  },
 };
 
-const throwCryptoApiNotFound = (reject: CryptoApiNotFoundCallback) =>
-  reject(new CryptoApiNotFoundError());
+/**
+ * Try to get an instance of the Crypto API from the current runtime. Should support Node,
+ * as well as others, like Deno, that implement Web APIs.
+ */
+export function getWebCrypto(): Promise<Crypto> {
+  /**
+   * Hello there! If you came here wondering why this method is asynchronous when use of
+   * `globalThis.crypto` is not, it's to minimize a bunch of refactor related to making this
+   * synchronous. For example, `generateRegistrationOptions()` and `generateAuthenticationOptions()`
+   * become synchronous if we make this synchronous (since nothing else in that method is async)
+   * which represents a breaking API change in this library's core API.
+   */
+  const toResolve = new Promise<Crypto>((resolve, reject) => {
+    if (webCrypto) {
+      return resolve(webCrypto);
+    }
 
-export const getWebCrypto = (): Promise<Crypto> =>
-  new Promise<Crypto>((resolve, reject) => {
-    tryGetCachedCryptoApi(resolve);
-    tryGetNativeCryptoApi(resolve);
+    /**
+     * Naively attempt to access Crypto as a global object, which popular ESM-centric run-times
+     * support (and Node v20+)
+     */
+    const _globalThisCrypto = _getWebCryptoInternals.stubThisGlobalThisCrypto();
 
-    throwCryptoApiNotFound(reject);
+    if (_globalThisCrypto) {
+      webCrypto = _globalThisCrypto;
+      return resolve(webCrypto);
+    }
+
+    // We tried to access it both in Node and globally, so bail out
+    return reject(new MissingWebCrypto());
   });
 
-const EXTRACTABLE = false;
+  return toResolve;
+}
 
-export const importKey = ({
-  keyData,
-  algorithm,
-}: ImportKeyPayload): Promise<CryptoKey> =>
-  getWebCrypto().then((crypto) =>
-    crypto.subtle.importKey(Key.JWK, keyData, algorithm, EXTRACTABLE, [
-      KeyUsage.VERIFY,
-    ]),
+export async function importKey(opts: {
+  keyData: JsonWebKey;
+  algorithm: AlgorithmIdentifier | RsaHashedImportParams | EcKeyImportParams;
+}): Promise<CryptoKey> {
+  const WebCrypto = await getWebCrypto();
+
+  const { keyData, algorithm } = opts;
+
+  return WebCrypto.subtle.importKey("jwk", keyData, algorithm, false, [
+    "verify",
+  ]);
+}
+
+/**
+ * Convert a COSE alg ID into a corresponding string value that WebCrypto APIs expect
+ */
+export function mapCoseAlgToWebCryptoAlg(alg: COSEALG): SubtleCryptoAlg {
+  if ([COSEALG.RS1].indexOf(alg) >= 0) {
+    return "SHA-1";
+  } else if ([COSEALG.ES256, COSEALG.PS256, COSEALG.RS256].indexOf(alg) >= 0) {
+    return "SHA-256";
+  } else if ([COSEALG.ES384, COSEALG.PS384, COSEALG.RS384].indexOf(alg) >= 0) {
+    return "SHA-384";
+  } else if (
+    [COSEALG.ES512, COSEALG.PS512, COSEALG.RS512, COSEALG.EdDSA].indexOf(alg) >=
+    0
+  ) {
+    return "SHA-512";
+  }
+
+  throw new Error(`Could not map COSE alg value of ${alg} to a WebCrypto alg`);
+}
+
+/**
+ * Convert a COSE alg ID into a corresponding key algorithm string value that WebCrypto APIs expect
+ */
+export function mapCoseAlgToWebCryptoKeyAlgName(
+  alg: COSEALG,
+): SubtleCryptoKeyAlgName {
+  if ([COSEALG.EdDSA].indexOf(alg) >= 0) {
+    return "Ed25519";
+  } else if (
+    [COSEALG.ES256, COSEALG.ES384, COSEALG.ES512, COSEALG.ES256K].indexOf(
+      alg,
+    ) >= 0
+  ) {
+    return "ECDSA";
+  } else if (
+    [COSEALG.RS256, COSEALG.RS384, COSEALG.RS512, COSEALG.RS1].indexOf(alg) >= 0
+  ) {
+    return "RSASSA-PKCS1-v1_5";
+  } else if ([COSEALG.PS256, COSEALG.PS384, COSEALG.PS512].indexOf(alg) >= 0) {
+    return "RSA-PSS";
+  }
+
+  throw new Error(
+    `Could not map COSE alg value of ${alg} to a WebCrypto key alg name`,
   );
-
-const isOfType = (algorithms: COSEALG[]) => (algorithm: COSEALG) =>
-  algorithms.indexOf(algorithm) >= 0;
-
-const isSha1 = isOfType([COSEALG.RS1]);
-const isSha256 = isOfType([COSEALG.ES256, COSEALG.PS256, COSEALG.RS256]);
-const isSha384 = isOfType([COSEALG.ES384, COSEALG.PS384, COSEALG.RS384]);
-const isSha512 = isOfType([
-  COSEALG.ES512,
-  COSEALG.PS512,
-  COSEALG.RS512,
-  COSEALG.EdDSA,
-]);
-
-const getHashingAlgorithm = (algorithm: COSEALG) => ({
-  isSha1: isSha1(algorithm),
-  isSha256: isSha256(algorithm),
-  isSha384: isSha384(algorithm),
-  isSha512: isSha512(algorithm),
-});
-
-export const mapCoseAlgToWebCryptoAlg = (
-  algorithm: COSEALG,
-): SubtleCryptoAlg => {
-  const { isSha1, isSha256, isSha384, isSha512 } =
-    getHashingAlgorithm(algorithm);
-
-  if (isSha1) {
-    return Algorithm.SHA1;
-  } else if (isSha256) {
-    return Algorithm.SHA256;
-  } else if (isSha384) {
-    return Algorithm.SHA384;
-  } else if (isSha512) {
-    return Algorithm.SHA512;
-  }
-
-  throw new Error(`Algorithm of type ${algorithm} not found`);
-};
-
-const isEd25519 = isOfType([COSEALG.EdDSA]);
-const isECDSA = isOfType([
-  COSEALG.ES256,
-  COSEALG.ES384,
-  COSEALG.ES512,
-  COSEALG.ES256K,
-]);
-const isRsaPkcs15 = isOfType([
-  COSEALG.RS256,
-  COSEALG.RS384,
-  COSEALG.RS512,
-  COSEALG.RS1,
-]);
-const isRsaPss = isOfType([COSEALG.PS256, COSEALG.PS384, COSEALG.PS512]);
-
-const getEncryptionAlgorithm = (algorithm: COSEALG) => ({
-  isEd25519: isEd25519(algorithm),
-  isECDSA: isECDSA(algorithm),
-  isRsaPkcs15: isRsaPkcs15(algorithm),
-  isRsaPss: isRsaPss(algorithm),
-});
-
-export const mapCoseAlgToWebCryptoKeyAlgName = (
-  algorithm: COSEALG,
-): SubtleCryptoKeyAlgName => {
-  const { isECDSA, isEd25519, isRsaPkcs15, isRsaPss } =
-    getEncryptionAlgorithm(algorithm);
-
-  if (isECDSA) {
-    return Algorithm.ECDSA;
-  } else if (isEd25519) {
-    return Algorithm.ED25519;
-  } else if (isRsaPkcs15) {
-    return Algorithm.RSA_PKCS1_v1_5;
-  } else if (isRsaPss) {
-    return Algorithm.RSA_PSS;
-  }
-
-  throw new Error(`Algorithm of type ${algorithm} not found`);
 }
 
 /**
