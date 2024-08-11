@@ -9,35 +9,38 @@ import {
   COSEPublicKeyRSA,
 } from "@/lib/auth";
 
-export function isCOSEPublicKeyOKP(
-  cosePublicKey: COSEPublicKey,
-): cosePublicKey is COSEPublicKeyOKP {
-  const kty = cosePublicKey.get(COSEKEYS.kty);
-  return isCOSEKty(kty) && kty === COSEKTY.OKP;
-}
+const isOfType = <T extends typeof COSEKTY | typeof COSECRV | typeof COSEALG>(
+  type: T,
+  value?: number,
+): type is T => Object.values(type).indexOf(value) >= 0;
 
-export function isCOSEPublicKeyEC2(
-  cosePublicKey: COSEPublicKey,
-): cosePublicKey is COSEPublicKeyEC2 {
-  const kty = cosePublicKey.get(COSEKEYS.kty);
-  return isCOSEKty(kty) && kty === COSEKTY.EC2;
-}
+export const isCOSEKty = (value?: number): value is COSEKTY =>
+  isOfType(COSEKTY, value);
 
-export function isCOSEPublicKeyRSA(
-  cosePublicKey: COSEPublicKey,
-): cosePublicKey is COSEPublicKeyRSA {
-  const kty = cosePublicKey.get(COSEKEYS.kty);
-  return isCOSEKty(kty) && kty === COSEKTY.RSA;
-}
+export const isCOSECrv = (value?: number): value is COSECRV =>
+  isOfType(COSECRV, value);
 
-export function isCOSEKty(kty: number | undefined): kty is COSEKTY {
-  return Object.values(COSEKTY).indexOf(kty as COSEKTY) >= 0;
-}
+export const isCOSEAlg = (value?: number): value is COSEALG =>
+  isOfType(COSEALG, value);
 
-export function isCOSECrv(crv: number | undefined): crv is COSECRV {
-  return Object.values(COSECRV).indexOf(crv as COSECRV) >= 0;
-}
+const withKty = (
+  publicKey: COSEPublicKey,
+  callback: (kty?: COSEKTY) => boolean,
+): boolean => callback(publicKey.get(COSEKEYS.kty));
 
-export function isCOSEAlg(alg: number | undefined): alg is COSEALG {
-  return Object.values(COSEALG).indexOf(alg as COSEALG) >= 0;
-}
+const publicKeyIsTypeOf = <T extends COSEKTY | COSECRV | COSEALG>(
+  type: T,
+  publicKey: COSEPublicKey,
+): boolean => withKty(publicKey, (kty) => isCOSEKty(kty) && kty === type);
+
+export const isCOSEPublicKeyOKP = (
+  publicKey: COSEPublicKey,
+): publicKey is COSEPublicKeyOKP => publicKeyIsTypeOf(COSEKTY.OKP, publicKey);
+
+export const isCOSEPublicKeyEC2 = (
+  publicKey: COSEPublicKey,
+): publicKey is COSEPublicKeyEC2 => publicKeyIsTypeOf(COSEKTY.EC2, publicKey);
+
+export const isCOSEPublicKeyRSA = (
+  publicKey: COSEPublicKey,
+): publicKey is COSEPublicKeyRSA => publicKeyIsTypeOf(COSEKTY.RSA, publicKey);
