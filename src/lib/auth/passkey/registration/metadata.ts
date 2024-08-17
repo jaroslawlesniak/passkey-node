@@ -18,6 +18,7 @@ import {
 } from "../utils";
 import { validateCertificatePath } from "./certificates";
 import { convertCertBufferToPEM } from "./verifications";
+import { mapAsync } from "./async";
 
 /**
  * Match properties of the authenticator's attestation statement against expected values as
@@ -152,10 +153,8 @@ export async function verifyAttestationWithMetadata({
   }
 
   // Prepare to check the certificate chain
-  const authenticatorCerts = x5c.map(convertCertBufferToPEM);
-  const statementRootCerts = attestationRootCertificates.map(
-    convertCertBufferToPEM,
-  );
+  const authenticatorCerts = await mapAsync(x5c, convertCertBufferToPEM);
+  const statementRootCerts = await mapAsync(attestationRootCertificates, convertCertBufferToPEM);
 
   /**
    * If an authenticator returns exactly one certificate in its x5c, and that cert is found in the
