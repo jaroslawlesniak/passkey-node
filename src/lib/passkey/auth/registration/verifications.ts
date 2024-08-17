@@ -1,4 +1,13 @@
 import {
+  fromBuffer,
+  isBase64,
+  isBase64URL,
+  toBase64,
+  toBuffer,
+} from "@/lib/base64";
+import * as base64 from "@/lib/base64";
+
+import {
   AsnParser,
   Certificate,
   ExtendedKeyUsage,
@@ -9,25 +18,8 @@ import {
   Name,
   SubjectAlternativeName,
 } from "../../asn";
-import {
-  fromBuffer,
-  isBase64,
-  isBase64URL,
-  toBase64,
-  toBuffer,
-} from "@/lib/base64";
-import * as base64 from "@/lib/base64";
 import { decodeFirst } from "../../cbor";
 import { isCOSEAlg, isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "../../cose";
-import {
-  areEqual,
-  concat,
-  fromUTF8String,
-  toDataView,
-  toHex,
-  toUTF8String,
-} from "../../uint";
-
 import {
   AttestationFormatVerifierOpts,
   Base64URLString,
@@ -41,7 +33,19 @@ import {
   SafetyNetJWTPayload,
   SafetyNetJWTSignature,
 } from "../../types";
-import { decodeCredentialPublicKey, toHash, verifySignature } from "../../utils";
+import {
+  areEqual,
+  concat,
+  fromUTF8String,
+  toDataView,
+  toHex,
+  toUTF8String,
+} from "../../uint";
+import {
+  decodeCredentialPublicKey,
+  toHash,
+  verifySignature,
+} from "../../utils";
 import { mapAsync } from "./async";
 import {
   getCertificateInfo,

@@ -1,5 +1,4 @@
 import { isBase64URL, toBuffer, toUTF8String } from "@/lib/base64";
-import { concat } from "../../uint";
 
 import {
   Base64URLString,
@@ -7,6 +6,7 @@ import {
   VerifiedAuthenticationResponse,
   VerifyAuthenticationResponseOpts,
 } from "../../types";
+import { concat } from "../../uint";
 import {
   matchExpectedRPID,
   parseAuthenticatorData,

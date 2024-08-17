@@ -1,6 +1,6 @@
 import { fromBuffer, toBuffer, toUTF8String } from "@/lib/base64";
-import { decodeFirst } from "../../cbor";
 
+import { decodeFirst } from "../../cbor";
 import {
   AttestationFormatVerifierOpts,
   AttestationObject,

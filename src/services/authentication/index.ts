@@ -1,3 +1,4 @@
+import { fromBuffer } from "@/lib/base64";
 import {
   AuthenticationResponseJSON,
   RegistrationResponseJSON,
@@ -6,7 +7,6 @@ import {
   verifyLogin,
   verifyRegistration,
 } from "@/lib/passkey";
-import { fromBuffer } from "@/lib/base64";
 import { credentialRepository, userRepository } from "@/repositories";
 
 export const startUserRegistration = async (email: string) =>

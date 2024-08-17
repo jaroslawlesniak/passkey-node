@@ -1,3 +1,5 @@
+import { toBuffer } from "@/lib/base64";
+
 import {
   AsnParser,
   AsnSerializer,
@@ -12,9 +14,6 @@ import {
   id_ce_subjectKeyIdentifier,
   SubjectKeyIdentifier,
 } from "../../asn";
-import { toBuffer } from "@/lib/base64";
-import { toDataView, toHex } from "../../uint";
-
 import {
   CAAuthorityInfo,
   CertificateInfo,
@@ -22,6 +21,7 @@ import {
   ParsedCertInfo,
   Subject,
 } from "../../types";
+import { toDataView, toHex } from "../../uint";
 import { mapX509SignatureAlgToCOSEAlg, verifySignature } from "../../utils";
 import { TPM_ALG, TPM_ST } from "./constants";
 

@@ -1,8 +1,7 @@
 import { toBuffer, toUTF8String } from "@/lib/base64";
+
 import { isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "../../cose";
 import { verifyEC2, verifyRSA } from "../../crypto";
-import { fromUTF8String } from "../../uint";
-
 import {
   AlgSign,
   Base64URLString,
@@ -12,13 +11,14 @@ import {
   COSEKTY,
   MetadataStatement,
 } from "../../types";
+import { fromUTF8String } from "../../uint";
 import {
   convertX509PublicKeyToCOSE,
   decodeCredentialPublicKey,
 } from "../../utils";
+import { mapAsync } from "./async";
 import { validateCertificatePath } from "./certificates";
 import { convertCertBufferToPEM } from "./verifications";
-import { mapAsync } from "./async";
 
 /**
  * Match properties of the authenticator's attestation statement against expected values as
@@ -154,7 +154,10 @@ export async function verifyAttestationWithMetadata({
 
   // Prepare to check the certificate chain
   const authenticatorCerts = await mapAsync(x5c, convertCertBufferToPEM);
-  const statementRootCerts = await mapAsync(attestationRootCertificates, convertCertBufferToPEM);
+  const statementRootCerts = await mapAsync(
+    attestationRootCertificates,
+    convertCertBufferToPEM,
+  );
 
   /**
    * If an authenticator returns exactly one certificate in its x5c, and that cert is found in the

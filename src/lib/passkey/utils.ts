@@ -11,15 +11,6 @@ import { decodeFirst, encode } from "./cbor";
 import { digest, verify } from "./crypto";
 import {} from "./crypto";
 import {
-  areEqual,
-  fromASCIIString,
-  fromHex,
-  fromUTF8String,
-  toDataView,
-  toHex,
-} from "./uint";
-
-import {
   AuthenticationExtensionsAuthenticatorOutputs,
   COSEALG,
   COSECRV,
@@ -31,6 +22,14 @@ import {
   CredentialDeviceType,
   ParsedAuthenticatorData,
 } from "./types";
+import {
+  areEqual,
+  fromASCIIString,
+  fromHex,
+  fromUTF8String,
+  toDataView,
+  toHex,
+} from "./uint";
 
 /**
  * CBOR-encoded extensions can be deeply-nested Maps, which are too deep for a simple

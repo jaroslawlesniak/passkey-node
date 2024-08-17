@@ -4,8 +4,8 @@ import { toBuffer } from "@/lib/base64";
 
 import {
   generateAuthenticationOptions,
-  verifyAuthenticationResponse,
   generateRegistrationOptions,
+  verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "./auth";
 import { ES256, origin, rpID, rpName, RS256 } from "./config";

@@ -1,12 +1,12 @@
 import { fromBuffer, isBase64URL, trimPadding } from "@/lib/base64";
-import { getRandomValues } from "../../crypto";
-import { fromUTF8String } from "../../uint";
 
+import { getRandomValues } from "../../crypto";
 import { generateChallenge } from "../../native";
 import {
   GenerateRegistrationOptionsOpts,
   PublicKeyCredentialCreationOptionsJSON,
 } from "../../types";
+import { fromUTF8String } from "../../uint";
 
 /**
  * Set up some default authenticator selection options as per the latest spec:
