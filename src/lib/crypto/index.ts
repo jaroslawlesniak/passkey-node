@@ -3,7 +3,6 @@ import {
   COSEALG,
   COSECRV,
   COSEKEYS,
-  COSEPublicKey,
   COSEPublicKeyEC2,
   COSEPublicKeyOKP,
   COSEPublicKeyRSA,
@@ -24,11 +23,23 @@ import { concat } from "@/lib/uint";
 
 import {
   Algorithm,
+  ByteTransformation,
   CryptoApiFoundCallback,
   CryptoApiNotFoundCallback,
+  EC2PublicKey,
   ImportKeyPayload,
   Key,
+  KeyAlgorithm,
   KeyUsage,
+  NormalizedFormInput,
+  OKPPublicKey,
+  Parsable,
+  RSAKeyAlgorithm,
+  RSAPublicKey,
+  VerifyEC2Input,
+  VerifyInput,
+  verifyOKPInput,
+  verifyRSAInput,
 } from "./types";
 
 let webCrypto: Crypto | undefined = undefined;
@@ -170,369 +181,475 @@ export const mapCoseAlgToWebCryptoKeyAlgName = (
   }
 
   throw new Error(`Algorithm of type ${algorithm} not found`);
-}
+};
 
-/**
- * In WebAuthn, EC2 signatures are wrapped in ASN.1 structure so we need to peel r and s apart.
- *
- * See https://www.w3.org/TR/webauthn-2/#sctn-signature-attestation-types
- */
-export function unwrapEC2Signature(
-  signature: Uint8Array,
-  crv: COSECRV,
-): Uint8Array {
-  const parsedSignature = AsnParser.parse(signature, ECDSASigValue);
-  const rBytes = new Uint8Array(parsedSignature.r);
-  const sBytes = new Uint8Array(parsedSignature.s);
+const P256_LENGTH = 32;
+const P384_LENGTH = 48;
+const P521_LENGTH = 66;
 
-  const componentLength = getSignatureComponentLength(crv);
-  const rNormalizedBytes = toNormalizedBytes(rBytes, componentLength);
-  const sNormalizedBytes = toNormalizedBytes(sBytes, componentLength);
-
-  const finalSignature = concat([rNormalizedBytes, sNormalizedBytes]);
-
-  return finalSignature;
-}
-
-/**
- * The SubtleCrypto Web Crypto API expects ECDSA signatures with `r` and `s` values to be encoded
- * to a specific length depending on the order of the curve. This function returns the expected
- * byte-length for each of the `r` and `s` signature components.
- *
- * See <https://www.w3.org/TR/WebCryptoAPI/#ecdsa-operations>
- */
-function getSignatureComponentLength(crv: COSECRV): number {
+const getSignatureComponentLength = (crv: COSECRV): number => {
   switch (crv) {
     case COSECRV.P256:
-      return 32;
+      return P256_LENGTH;
     case COSECRV.P384:
-      return 48;
+      return P384_LENGTH;
     case COSECRV.P521:
-      return 66;
+      return P521_LENGTH;
     default:
-      throw new Error(`Unexpected COSE crv value of ${crv} (EC2)`);
+      throw new Error(`Invalid ${crv} value`);
   }
-}
+};
 
-/**
- * Converts the ASN.1 integer representation to bytes of a specific length `n`.
- *
- * DER encodes integers as big-endian byte arrays, with as small as possible representation and
- * requires a leading `0` byte to disambiguate between negative and positive numbers. This means
- * that `r` and `s` can potentially not be the expected byte-length that is needed by the
- * SubtleCrypto Web Crypto API: if there are leading `0`s it can be shorter than expected, and if
- * it has a leading `1` bit, it can be one byte longer.
- *
- * See <https://www.itu.int/rec/T-REC-X.690-202102-I/en>
- * See <https://www.w3.org/TR/WebCryptoAPI/#ecdsa-operations>
- */
-function toNormalizedBytes(
+const isShorten = ({ bytes, length }: ByteTransformation): boolean =>
+  bytes.length < length;
+
+const padToStart = ({ bytes, length }: ByteTransformation): Uint8Array => {
+  const array = new Uint8Array(length);
+
+  array.set(bytes, length - bytes.length);
+
+  return array;
+};
+
+const isSameLength = ({ bytes, length }: ByteTransformation): boolean =>
+  bytes.length === length;
+
+const rewriteBytesArray = ({ bytes }: ByteTransformation): Uint8Array => bytes;
+
+const startsFromZero = ({ bytes, length }: ByteTransformation): boolean =>
+  bytes.length === length + 1 && bytes[0] === 0 && (bytes[1] & 0x80) === 0x80;
+
+const trimStart = ({ bytes }: ByteTransformation): Uint8Array =>
+  bytes.subarray(1);
+
+const transformations: Parsable<ByteTransformation, Uint8Array>[] = [
+  {
+    parsable: isShorten,
+    parse: padToStart,
+  },
+  {
+    parsable: isSameLength,
+    parse: rewriteBytesArray,
+  },
+  {
+    parsable: startsFromZero,
+    parse: trimStart,
+  },
+];
+
+const toNormalizedBytes = async (
   bytes: Uint8Array,
-  componentLength: number,
-): Uint8Array {
-  let normalizedBytes;
-  if (bytes.length < componentLength) {
-    // In case the bytes are shorter than expected, we need to pad it with leading `0`s.
-    normalizedBytes = new Uint8Array(componentLength);
-    normalizedBytes.set(bytes, componentLength - bytes.length);
-  } else if (bytes.length === componentLength) {
-    normalizedBytes = bytes;
-  } else if (
-    bytes.length === componentLength + 1 &&
-    bytes[0] === 0 &&
-    (bytes[1] & 0x80) === 0x80
-  ) {
-    // The bytes contain a leading `0` to encode that the integer is positive. This leading `0`
-    // needs to be removed for compatibility with the SubtleCrypto Web Crypto API.
-    normalizedBytes = bytes.subarray(1);
-  } else {
-    throw new Error(
-      `Invalid signature component length ${bytes.length}, expected ${componentLength}`,
-    );
+  length: number,
+): Promise<Uint8Array> => {
+  const normalized = await transformations
+    .find(({ parsable }) => parsable({ bytes, length }))
+    ?.parse({ bytes, length });
+
+  if (normalized) {
+    return Promise.resolve(normalized);
   }
 
-  return normalizedBytes;
-}
+  throw new Error(
+    `Invalid component length ${bytes.length}, expected ${length}`,
+  );
+};
 
-/**
- * Verify signatures with their public key. Supports EC2 and RSA public keys.
- */
-export function verify(opts: {
-  cosePublicKey: COSEPublicKey;
-  signature: Uint8Array;
-  data: Uint8Array;
-  shaHashOverride?: COSEALG;
-}): Promise<boolean> {
-  const { cosePublicKey, signature, data, shaHashOverride } = opts;
+const splitBytes = (payload: ECDSASigValue): Uint8Array[] => [
+  new Uint8Array(payload.r),
+  new Uint8Array(payload.s),
+];
 
-  if (isCOSEPublicKeyEC2(cosePublicKey)) {
-    const crv = cosePublicKey.get(COSEKEYS.crv);
-    if (!isCOSECrv(crv)) {
-      throw new Error(`unknown COSE curve ${crv}`);
-    }
-    const unwrappedSignature = unwrapEC2Signature(signature, crv);
-    return verifyEC2({
+const calculateBytes = (crv: COSECRV) => (signature: ECDSASigValue) =>
+  Promise.all([splitBytes(signature), getSignatureComponentLength(crv)]);
+
+const toNormalizedForm = ([[rBytes, sBytes], length]: NormalizedFormInput) =>
+  Promise.all([
+    toNormalizedBytes(rBytes, length),
+    toNormalizedBytes(sBytes, length),
+  ]);
+
+const unwrapEC2Signature = (
+  signature: Uint8Array,
+  crv: COSECRV,
+): Promise<Uint8Array> =>
+  Promise.resolve()
+    .then(() => AsnParser.parse(signature, ECDSASigValue))
+    .then(calculateBytes(crv))
+    .then(toNormalizedForm)
+    .then(concat);
+
+const parseToEC2 = async ({
+  cosePublicKey,
+  signature,
+  ...passThrough
+}: VerifyInput) => {
+  if (!isCOSEPublicKeyEC2(cosePublicKey)) {
+    throw new Error("Parser failed");
+  }
+
+  const crv = cosePublicKey.get(COSEKEYS.crv);
+
+  if (!isCOSECrv(crv)) {
+    throw new Error("Unknown COSE value");
+  }
+
+  return unwrapEC2Signature(signature, crv).then((unwrappedSignature) =>
+    verifyEC2({
+      ...passThrough,
       cosePublicKey,
       signature: unwrappedSignature,
-      data,
-      shaHashOverride,
-    });
-  } else if (isCOSEPublicKeyRSA(cosePublicKey)) {
-    return verifyRSA({ cosePublicKey, signature, data, shaHashOverride });
-  } else if (isCOSEPublicKeyOKP(cosePublicKey)) {
-    return verifyOKP({ cosePublicKey, signature, data });
-  }
-
-  const kty = cosePublicKey.get(COSEKEYS.kty);
-  throw new Error(
-    `Signature verification with public key of kty ${kty} is not supported by this method`,
+    }),
   );
-}
+};
 
-/**
- * Verify a signature using an EC2 public key
- */
-export async function verifyEC2(opts: {
-  cosePublicKey: COSEPublicKeyEC2;
-  signature: Uint8Array;
-  data: Uint8Array;
-  shaHashOverride?: COSEALG;
-}): Promise<boolean> {
-  const { cosePublicKey, signature, data, shaHashOverride } = opts;
-
-  const WebCrypto = await getWebCrypto();
-
-  // Import the public key
-  const alg = cosePublicKey.get(COSEKEYS.alg);
-  const crv = cosePublicKey.get(COSEKEYS.crv);
-  const x = cosePublicKey.get(COSEKEYS.x);
-  const y = cosePublicKey.get(COSEKEYS.y);
-
-  if (!alg) {
-    throw new Error("Public key was missing alg (EC2)");
+const parseToRSA = ({ cosePublicKey, ...passThrough }: VerifyInput) => {
+  if (!isCOSEPublicKeyRSA(cosePublicKey)) {
+    throw new Error("Parser failed");
   }
 
-  if (!crv) {
-    throw new Error("Public key was missing crv (EC2)");
-  }
-
-  if (!x) {
-    throw new Error("Public key was missing x (EC2)");
-  }
-
-  if (!y) {
-    throw new Error("Public key was missing y (EC2)");
-  }
-
-  let _crv: SubtleCryptoCrv;
-  if (crv === COSECRV.P256) {
-    _crv = "P-256";
-  } else if (crv === COSECRV.P384) {
-    _crv = "P-384";
-  } else if (crv === COSECRV.P521) {
-    _crv = "P-521";
-  } else {
-    throw new Error(`Unexpected COSE crv value of ${crv} (EC2)`);
-  }
-
-  const keyData: JsonWebKey = {
-    kty: "EC",
-    crv: _crv,
-    x: fromBuffer(x),
-    y: fromBuffer(y),
-    ext: false,
-  };
-
-  const keyAlgorithm: EcKeyImportParams = {
-    /**
-     * Note to future self: you can't use `mapCoseAlgToWebCryptoKeyAlgName()` here because some
-     * leaf certs from actual devices specified an RSA SHA value for `alg` (e.g. `-257`) which
-     * would then map here to `'RSASSA-PKCS1-v1_5'`. We always want `'ECDSA'` here so we'll
-     * hard-code this.
-     */
-    name: "ECDSA",
-    namedCurve: _crv,
-  };
-
-  const key = await importKey({
-    keyData,
-    algorithm: keyAlgorithm,
+  return verifyRSA({
+    ...passThrough,
+    cosePublicKey,
   });
+};
 
-  // Determine which SHA algorithm to use for signature verification
-  let subtleAlg = mapCoseAlgToWebCryptoAlg(alg);
-  if (shaHashOverride) {
-    subtleAlg = mapCoseAlgToWebCryptoAlg(shaHashOverride);
+const parseToOKP = ({ cosePublicKey, ...passThrough }: VerifyInput) => {
+  if (!isCOSEPublicKeyOKP(cosePublicKey)) {
+    throw new Error("Parser failed");
   }
 
-  const verifyAlgorithm: EcdsaParams = {
-    name: "ECDSA",
-    hash: { name: subtleAlg },
-  };
-
-  return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
-}
-
-export async function verifyOKP(opts: {
-  cosePublicKey: COSEPublicKeyOKP;
-  signature: Uint8Array;
-  data: Uint8Array;
-}): Promise<boolean> {
-  const { cosePublicKey, signature, data } = opts;
-
-  const WebCrypto = await getWebCrypto();
-
-  const alg = cosePublicKey.get(COSEKEYS.alg);
-  const crv = cosePublicKey.get(COSEKEYS.crv);
-  const x = cosePublicKey.get(COSEKEYS.x);
-
-  if (!alg) {
-    throw new Error("Public key was missing alg (OKP)");
-  }
-
-  if (!isCOSEAlg(alg)) {
-    throw new Error(`Public key had invalid alg ${alg} (OKP)`);
-  }
-
-  if (!crv) {
-    throw new Error("Public key was missing crv (OKP)");
-  }
-
-  if (!x) {
-    throw new Error("Public key was missing x (OKP)");
-  }
-
-  // Pulled key import steps from here:
-  // https://wicg.github.io/webcrypto-secure-curves/#ed25519-operations
-  let _crv: SubtleCryptoCrv;
-  if (crv === COSECRV.ED25519) {
-    _crv = "Ed25519";
-  } else {
-    throw new Error(`Unexpected COSE crv value of ${crv} (OKP)`);
-  }
-
-  const keyData: JsonWebKey = {
-    kty: "OKP",
-    crv: _crv,
-    alg: "EdDSA",
-    x: fromBuffer(x),
-    ext: false,
-  };
-
-  const keyAlgorithm: EcKeyImportParams = {
-    name: _crv,
-    namedCurve: _crv,
-  };
-
-  const key = await importKey({
-    keyData,
-    algorithm: keyAlgorithm,
+  return verifyOKP({
+    ...passThrough,
+    cosePublicKey,
   });
+};
 
-  const verifyAlgorithm: AlgorithmIdentifier = {
-    name: _crv,
-  };
+const verifications: Parsable<VerifyInput, boolean>[] = [
+  {
+    parsable: ({ cosePublicKey }) => isCOSEPublicKeyEC2(cosePublicKey),
+    parse: parseToEC2,
+  },
+  {
+    parsable: ({ cosePublicKey }) => isCOSEPublicKeyRSA(cosePublicKey),
+    parse: parseToRSA,
+  },
+  {
+    parsable: ({ cosePublicKey }) => isCOSEPublicKeyOKP(cosePublicKey),
+    parse: parseToOKP,
+  },
+];
 
-  return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
-}
+export const verify = async (input: VerifyInput): Promise<boolean> => {
+  const verified = await verifications
+    .find(({ parsable }) => parsable(input))
+    ?.parse(input);
 
-/**
- * Verify a signature using an RSA public key
- */
-export async function verifyRSA(opts: {
-  cosePublicKey: COSEPublicKeyRSA;
-  signature: Uint8Array;
-  data: Uint8Array;
-  shaHashOverride?: COSEALG;
-}): Promise<boolean> {
-  const { cosePublicKey, signature, data, shaHashOverride } = opts;
-
-  const WebCrypto = await getWebCrypto();
-
-  const alg = cosePublicKey.get(COSEKEYS.alg);
-  const n = cosePublicKey.get(COSEKEYS.n);
-  const e = cosePublicKey.get(COSEKEYS.e);
-
-  if (!alg) {
-    throw new Error("Public key was missing alg (RSA)");
+  if (verified) {
+    return Promise.resolve(verified);
   }
 
-  if (!isCOSEAlg(alg)) {
-    throw new Error(`Public key had invalid alg ${alg} (RSA)`);
+  throw new Error("Signature verification failed");
+};
+
+const validatePublicKeyPartial = <T>(message: string, value?: T): T => {
+  if (value) {
+    return value;
   }
 
-  if (!n) {
-    throw new Error("Public key was missing n (RSA)");
+  throw new Error(message);
+};
+
+const importEC2PublicKey = (cosePublicKey: COSEPublicKeyEC2): EC2PublicKey => ({
+  alg: validatePublicKeyPartial(
+    "[EC2] Missing alg in public key",
+    cosePublicKey.get(COSEKEYS.alg),
+  ),
+  crv: validatePublicKeyPartial(
+    "[EC2] Missing crv in public key",
+    cosePublicKey.get(COSEKEYS.crv),
+  ),
+  x: validatePublicKeyPartial(
+    "[EC2] Missing x in public key",
+    cosePublicKey.get(COSEKEYS.x),
+  ),
+  y: validatePublicKeyPartial(
+    "[EC2] Missing y in public key",
+    cosePublicKey.get(COSEKEYS.y),
+  ),
+});
+
+const toEC2Crv = (crv: number): SubtleCryptoCrv => {
+  switch (crv) {
+    case COSECRV.P256:
+      return KeyAlgorithm.P256;
+
+    case COSECRV.P384:
+      return KeyAlgorithm.P384;
+
+    case COSECRV.P521:
+      return KeyAlgorithm.P521;
+
+    default:
+      throw new Error(`[EC2] Invalid crv value`);
   }
+};
 
-  if (!e) {
-    throw new Error("Public key was missing e (RSA)");
-  }
+const toEC2KeyData = ({ crv, x, y }: EC2PublicKey): JsonWebKey => ({
+  kty: "EC",
+  crv: toEC2Crv(crv),
+  x: fromBuffer(x),
+  y: fromBuffer(y),
+  ext: false,
+});
 
-  const keyData: JsonWebKey = {
-    kty: "RSA",
-    alg: "",
-    n: fromBuffer(n),
-    e: fromBuffer(e),
-    ext: false,
-  };
+const toEC2KeyAlgorithm = ({ crv }: EC2PublicKey): EcKeyImportParams => ({
+  name: "ECDSA",
+  namedCurve: toEC2Crv(crv),
+});
 
-  const keyAlgorithm = {
-    name: mapCoseAlgToWebCryptoKeyAlgName(alg),
-    hash: { name: mapCoseAlgToWebCryptoAlg(alg) },
-  };
+const toEC2VerifyAlgorithm = (algorithm: SubtleCryptoAlg): EcdsaParams => ({
+  name: "ECDSA",
+  hash: { name: algorithm },
+});
 
-  const verifyAlgorithm: AlgorithmIdentifier | RsaPssParams = {
-    name: mapCoseAlgToWebCryptoKeyAlgName(alg),
-  };
-
-  if (shaHashOverride) {
-    keyAlgorithm.hash.name = mapCoseAlgToWebCryptoAlg(shaHashOverride);
-  }
-
-  if (keyAlgorithm.name === "RSASSA-PKCS1-v1_5") {
-    if (keyAlgorithm.hash.name === "SHA-256") {
-      keyData.alg = "RS256";
-    } else if (keyAlgorithm.hash.name === "SHA-384") {
-      keyData.alg = "RS384";
-    } else if (keyAlgorithm.hash.name === "SHA-512") {
-      keyData.alg = "RS512";
-    } else if (keyAlgorithm.hash.name === "SHA-1") {
-      keyData.alg = "RS1";
-    }
-  } else if (keyAlgorithm.name === "RSA-PSS") {
-    /**
-     * salt length. The default value is 20 but the convention is to use hLen, the length of the
-     * output of the hash function in bytes. A salt length of zero is permitted and will result in
-     * a deterministic signature value. The actual salt length used can be determined from the
-     * signature value.
-     *
-     * From https://www.cryptosys.net/pki/manpki/pki_rsaschemes.html
-     */
-    let saltLength = 0;
-
-    if (keyAlgorithm.hash.name === "SHA-256") {
-      keyData.alg = "PS256";
-      saltLength = 32; // 256 bits => 32 bytes
-    } else if (keyAlgorithm.hash.name === "SHA-384") {
-      keyData.alg = "PS384";
-      saltLength = 48; // 384 bits => 48 bytes
-    } else if (keyAlgorithm.hash.name === "SHA-512") {
-      keyData.alg = "PS512";
-      saltLength = 64; // 512 bits => 64 bytes
-    }
-
-    (verifyAlgorithm as RsaPssParams).saltLength = saltLength;
-  } else {
-    throw new Error(
-      `Unexpected RSA key algorithm ${alg} (${keyAlgorithm.name})`,
+export const verifyEC2 = ({
+  cosePublicKey,
+  data,
+  signature,
+  shaHashOverride,
+}: VerifyEC2Input): Promise<boolean> =>
+  getWebCrypto().then(async (crypto) => {
+    const publicKey = importEC2PublicKey(cosePublicKey);
+    const keyData = toEC2KeyData(publicKey);
+    const algorithm = toEC2KeyAlgorithm(publicKey);
+    const subtleAlg = mapCoseAlgToWebCryptoAlg(
+      shaHashOverride || publicKey.alg,
     );
-  }
+    const verifyAlgorithm = toEC2VerifyAlgorithm(subtleAlg);
 
-  const key = await importKey({
-    keyData,
-    algorithm: keyAlgorithm,
+    const key = await importKey({
+      keyData,
+      algorithm,
+    });
+
+    return crypto.subtle.verify(verifyAlgorithm, key, signature, data);
   });
 
-  return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
-}
+const importOKPPublicKey = (cosePublicKey: COSEPublicKeyOKP): OKPPublicKey => {
+  const alg = validatePublicKeyPartial(
+    "[OKP] Missing alg in public key",
+    cosePublicKey.get(COSEKEYS.alg),
+  );
+  const crv = validatePublicKeyPartial(
+    "[OKP] Missing crv in public key",
+    cosePublicKey.get(COSEKEYS.crv),
+  );
+  const x = validatePublicKeyPartial(
+    "[OKP] Missing x in public key",
+    cosePublicKey.get(COSEKEYS.x),
+  );
+
+  if (!isCOSEAlg(alg)) {
+    throw new Error("[OKP] Invalid alg");
+  }
+
+  return { alg, crv, x };
+};
+
+const toOKPCrv = (crv: number) => {
+  switch (crv) {
+    case COSECRV.ED25519:
+      return KeyAlgorithm.ED25519;
+    default:
+      throw new Error(`[OKP] Invalid crv value`);
+  }
+};
+
+const toOKPKeyData = ({ crv, x }: OKPPublicKey): JsonWebKey => ({
+  kty: "OKP",
+  alg: "EdDSA",
+  crv: toOKPCrv(crv),
+  x: fromBuffer(x),
+  ext: false,
+});
+
+const toOKPKeyAlgorithm = ({ crv }: OKPPublicKey): EcKeyImportParams => ({
+  name: toOKPCrv(crv),
+  namedCurve: toOKPCrv(crv),
+});
+
+const toOKPVerifyAlgorithm = ({ crv }: OKPPublicKey): AlgorithmIdentifier => ({
+  name: toOKPCrv(crv),
+});
+
+export const verifyOKP = ({
+  cosePublicKey,
+  data,
+  signature,
+}: verifyOKPInput): Promise<boolean> =>
+  getWebCrypto().then(async (crypto) => {
+    const publicKey = importOKPPublicKey(cosePublicKey);
+
+    const keyData = toOKPKeyData(publicKey);
+    const keyAlgorithm = toOKPKeyAlgorithm(publicKey);
+    const verifyAlgorithm = toOKPVerifyAlgorithm(publicKey);
+
+    const key = await importKey({
+      keyData,
+      algorithm: keyAlgorithm,
+    });
+
+    return crypto.subtle.verify(verifyAlgorithm, key, signature, data);
+  });
+
+const toRSAPublicKey = (cosePublicKey: COSEPublicKeyRSA): RSAPublicKey => {
+  const alg = validatePublicKeyPartial(
+    "[RSA] Missing alg in public key",
+    cosePublicKey.get(COSEKEYS.alg),
+  );
+  const n = validatePublicKeyPartial(
+    "[RSA] Missing n in public key",
+    cosePublicKey.get(COSEKEYS.n),
+  );
+  const e = validatePublicKeyPartial(
+    "[RSA] Missing e in public key",
+    cosePublicKey.get(COSEKEYS.e),
+  );
+
+  if (!isCOSEAlg(alg)) {
+    throw new Error("[RSA] Invalid alg");
+  }
+
+  return { alg, n, e };
+};
+
+const toRsaPkcs15Name = (algorithm: string) => {
+  switch (algorithm) {
+    case Algorithm.SHA256:
+      return KeyAlgorithm.RS256;
+
+    case Algorithm.SHA384:
+      return KeyAlgorithm.RS384;
+
+    case Algorithm.SHA512:
+      return KeyAlgorithm.RS512;
+
+    case Algorithm.SHA1:
+      return KeyAlgorithm.RS1;
+
+    default:
+      throw new Error(`Unsupported algorithm ${algorithm}`);
+  }
+};
+
+const toRsaPssName = (algorithm: string) => {
+  switch (algorithm) {
+    case Algorithm.SHA256:
+      return KeyAlgorithm.PS256;
+
+    case Algorithm.SHA384:
+      return KeyAlgorithm.PS384;
+
+    case Algorithm.SHA512:
+      return KeyAlgorithm.PS512;
+
+    default:
+      throw new Error(`Unsupported algorithm ${algorithm}`);
+  }
+};
+
+const toKeyAlgorithmName = (keyAlgorithm: RSAKeyAlgorithm) => {
+  switch (keyAlgorithm.name) {
+    case Algorithm.RSA_PKCS1_v1_5:
+      return toRsaPkcs15Name(keyAlgorithm.hash.name);
+
+    case Algorithm.RSA_PSS:
+      return toRsaPssName(keyAlgorithm.hash.name);
+
+    default:
+      throw new Error(`Unsupported algorithm name ${keyAlgorithm.name}`);
+  }
+};
+
+const toRSAKeyData = (
+  { n, e }: RSAPublicKey,
+  keyAlgorithm: RSAKeyAlgorithm,
+) => ({
+  kty: "RSA",
+  alg: toKeyAlgorithmName(keyAlgorithm),
+  n: fromBuffer(n),
+  e: fromBuffer(e),
+  ext: false,
+});
+
+const toRSAKeyAlgorithm = (
+  { alg }: RSAPublicKey,
+  shaHashOverride?: COSEALG,
+): RSAKeyAlgorithm => ({
+  name: mapCoseAlgToWebCryptoKeyAlgName(alg),
+  hash: { name: toRSAVerifyAlgorithmName(alg, shaHashOverride) },
+});
+
+const toRSAVerifyAlgorithmName = (
+  algorithm: COSEALG,
+  shaHashOverride?: COSEALG,
+) => {
+  if (shaHashOverride) {
+    return mapCoseAlgToWebCryptoAlg(shaHashOverride);
+  }
+
+  return mapCoseAlgToWebCryptoAlg(algorithm);
+};
+
+const toRSAPssSaltLength = ({ hash, name }: RSAKeyAlgorithm): number => {
+  const DEFAULT_SALT_LENGTH = 0;
+
+  switch (name) {
+    case Algorithm.RSA_PSS:
+      switch (hash.name) {
+        case Algorithm.SHA256:
+          return 32;
+
+        case Algorithm.SHA384:
+          return 48;
+
+        case Algorithm.SHA512:
+          return 64;
+
+        default:
+          return DEFAULT_SALT_LENGTH;
+      }
+
+    default:
+      return DEFAULT_SALT_LENGTH;
+  }
+};
+
+const toRSAVerifyAlgorithm = (
+  { alg }: RSAPublicKey,
+  keyAlgorithm: RSAKeyAlgorithm,
+): AlgorithmIdentifier | RsaPssParams => ({
+  name: mapCoseAlgToWebCryptoKeyAlgName(alg),
+  saltLength: toRSAPssSaltLength(keyAlgorithm),
+});
+
+export const verifyRSA = ({
+  cosePublicKey,
+  data,
+  signature,
+  shaHashOverride,
+}: verifyRSAInput): Promise<boolean> =>
+  getWebCrypto().then(async (crypto) => {
+    const publicKey = toRSAPublicKey(cosePublicKey);
+
+    const keyAlgorithm = toRSAKeyAlgorithm(publicKey, shaHashOverride);
+    const keyData = toRSAKeyData(publicKey, keyAlgorithm);
+    const verifyAlgorithm = toRSAVerifyAlgorithm(publicKey, keyAlgorithm);
+
+    const key = await importKey({
+      keyData,
+      algorithm: keyAlgorithm,
+    });
+
+    return crypto.subtle.verify(verifyAlgorithm, key, signature, data);
+  });
