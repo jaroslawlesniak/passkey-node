@@ -32,7 +32,7 @@ export const fromHex = (hex?: string): Uint8Array => {
 const getArraysLengths = (arrays: Uint8Array[]) =>
   arrays.reduce((prev, curr) => prev + curr.length, 0);
 
-export function concat(arrays: Uint8Array[]): Uint8Array {
+export const concat = (arrays: Uint8Array[]): Uint8Array => {
   const array = new Uint8Array(getArraysLengths(arrays));
 
   let pointer = 0;
@@ -44,7 +44,7 @@ export function concat(arrays: Uint8Array[]): Uint8Array {
   });
 
   return array;
-}
+};
 
 export const toUTF8String = (input: Uint8Array): string => {
   const decoder = new TextDecoder("utf-8");
@@ -59,7 +59,7 @@ export const fromUTF8String = (input: string): Uint8Array => {
 };
 
 export const fromASCIIString = (input: string): Uint8Array =>
-  Uint8Array.from(input.split("").map((x) => x.charCodeAt(0)));
+  Uint8Array.from(input.split("").map((char) => char.charCodeAt(0)));
 
 export const toDataView = (array: Uint8Array): DataView =>
   new DataView(array.buffer, array.byteOffset, array.length);
