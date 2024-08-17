@@ -7,7 +7,7 @@ import {
   COSEPublicKeyEC2,
   COSEPublicKeyOKP,
   COSEPublicKeyRSA,
-} from "@/lib/auth";
+} from "../types";
 
 const isOfType = <T extends typeof COSEKTY | typeof COSECRV | typeof COSEALG>(
   type: T,

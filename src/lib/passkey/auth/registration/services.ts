@@ -7,8 +7,8 @@ import {
   RootCertIdentifier,
   SERVICE_STATE,
   VerificationMode,
-} from "../types";
-import { convertAAGUIDToString } from "../utils";
+} from "../../types";
+import { convertAAGUIDToString } from "../../utils";
 import { mapAsync } from "./async";
 import {
   Apple_WebAuthn_Root_CA,

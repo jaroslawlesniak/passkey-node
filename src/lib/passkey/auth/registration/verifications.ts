@@ -8,7 +8,7 @@ import {
   KeyDescription,
   Name,
   SubjectAlternativeName,
-} from "@/lib/asn";
+} from "../../asn";
 import {
   fromBuffer,
   isBase64,
@@ -17,8 +17,8 @@ import {
   toBuffer,
 } from "@/lib/base64";
 import * as base64 from "@/lib/base64";
-import { decodeFirst } from "@/lib/cbor";
-import { isCOSEAlg, isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "@/lib/cose";
+import { decodeFirst } from "../../cbor";
+import { isCOSEAlg, isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "../../cose";
 import {
   areEqual,
   concat,
@@ -26,7 +26,7 @@ import {
   toDataView,
   toHex,
   toUTF8String,
-} from "@/lib/uint";
+} from "../../uint";
 
 import {
   AttestationFormatVerifierOpts,
@@ -40,8 +40,8 @@ import {
   SafetyNetJWTHeader,
   SafetyNetJWTPayload,
   SafetyNetJWTSignature,
-} from "../types";
-import { decodeCredentialPublicKey, toHash, verifySignature } from "../utils";
+} from "../../types";
+import { decodeCredentialPublicKey, toHash, verifySignature } from "../../utils";
 import { mapAsync } from "./async";
 import {
   getCertificateInfo,

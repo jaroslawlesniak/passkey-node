@@ -11,9 +11,9 @@ import {
   id_ce_cRLDistributionPoints,
   id_ce_subjectKeyIdentifier,
   SubjectKeyIdentifier,
-} from "@/lib/asn";
+} from "../../asn";
 import { toBuffer } from "@/lib/base64";
-import { toDataView, toHex } from "@/lib/uint";
+import { toDataView, toHex } from "../../uint";
 
 import {
   CAAuthorityInfo,
@@ -21,8 +21,8 @@ import {
   Issuer,
   ParsedCertInfo,
   Subject,
-} from "../types";
-import { mapX509SignatureAlgToCOSEAlg, verifySignature } from "../utils";
+} from "../../types";
+import { mapX509SignatureAlgToCOSEAlg, verifySignature } from "../../utils";
 import { TPM_ALG, TPM_ST } from "./constants";
 
 /**

@@ -1,6 +1,6 @@
 import base64 from "@hexagon/base64";
 
-import type { Base64URLString } from "@/lib/auth";
+import type { Base64URLString } from "@/lib/passkey";
 
 import type { Algorithm, Utf8String } from "./types";
 

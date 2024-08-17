@@ -1,7 +1,7 @@
 import { toBuffer, toUTF8String } from "@/lib/base64";
-import { isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "@/lib/cose";
-import { verifyEC2, verifyRSA } from "@/lib/crypto";
-import { fromUTF8String } from "@/lib/uint";
+import { isCOSEPublicKeyEC2, isCOSEPublicKeyRSA } from "../../cose";
+import { verifyEC2, verifyRSA } from "../../crypto";
+import { fromUTF8String } from "../../uint";
 
 import {
   AlgSign,
@@ -11,11 +11,11 @@ import {
   COSEKEYS,
   COSEKTY,
   MetadataStatement,
-} from "../types";
+} from "../../types";
 import {
   convertX509PublicKeyToCOSE,
   decodeCredentialPublicKey,
-} from "../utils";
+} from "../../utils";
 import { validateCertificatePath } from "./certificates";
 import { convertCertBufferToPEM } from "./verifications";
 import { mapAsync } from "./async";

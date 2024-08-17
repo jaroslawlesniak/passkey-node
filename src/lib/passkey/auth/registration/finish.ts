@@ -1,5 +1,5 @@
 import { fromBuffer, toBuffer, toUTF8String } from "@/lib/base64";
-import { decodeFirst } from "@/lib/cbor";
+import { decodeFirst } from "../../cbor";
 
 import {
   AttestationFormatVerifierOpts,
@@ -9,7 +9,7 @@ import {
   COSEKEYS,
   VerifiedRegistrationResponse,
   VerifyRegistrationResponseOpts,
-} from "../types";
+} from "../../types";
 import {
   convertAAGUIDToString,
   decodeCredentialPublicKey,
@@ -17,7 +17,7 @@ import {
   parseAuthenticatorData,
   parseBackupFlags,
   toHash,
-} from "../utils";
+} from "../../utils";
 import { supportedCOSEAlgorithmIdentifiers } from "./algorithms";
 import { SettingsService } from "./services";
 import {

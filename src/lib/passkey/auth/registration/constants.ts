@@ -9,7 +9,7 @@
  * - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf
  */
 
-import { ManufacturerInfo } from "../types";
+import { ManufacturerInfo } from "../../types";
 
 /**
  * 6.9 TPM_ST (Structure Tags)

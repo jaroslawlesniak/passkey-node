@@ -6,10 +6,10 @@ import {
   id_secp256r1,
   id_secp384r1,
   RSAPublicKey,
-} from "@/lib/asn";
-import { decodeFirst, encode } from "@/lib/cbor";
-import { digest, verify } from "@/lib/crypto";
-import {} from "@/lib/crypto";
+} from "./asn";
+import { decodeFirst, encode } from "./cbor";
+import { digest, verify } from "./crypto";
+import {} from "./crypto";
 import {
   areEqual,
   fromASCIIString,
@@ -17,7 +17,7 @@ import {
   fromUTF8String,
   toDataView,
   toHex,
-} from "@/lib/uint";
+} from "./uint";
 
 import {
   AuthenticationExtensionsAuthenticatorOutputs,

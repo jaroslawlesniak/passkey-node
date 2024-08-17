@@ -5,12 +5,10 @@ import { toBuffer } from "@/lib/base64";
 import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
-} from "./authentication";
-import { ES256, origin, rpID, rpName, RS256 } from "./config";
-import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
-} from "./registration";
+} from "./auth";
+import { ES256, origin, rpID, rpName, RS256 } from "./config";
 import {
   AuthenticationResponseJSON,
   AuthenticatorDevice,

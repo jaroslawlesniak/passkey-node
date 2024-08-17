@@ -5,7 +5,7 @@ import {
   startRegistration,
   verifyLogin,
   verifyRegistration,
-} from "@/lib/auth";
+} from "@/lib/passkey";
 import { fromBuffer } from "@/lib/base64";
 import { credentialRepository, userRepository } from "@/repositories";
 

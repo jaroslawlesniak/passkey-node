@@ -1,4 +1,4 @@
-import { Certificate } from "@/lib/asn";
+import { Certificate } from "./asn";
 
 /**
  * Available only in secure contexts.
