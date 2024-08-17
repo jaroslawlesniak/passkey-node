@@ -420,6 +420,7 @@ export const verifyEC2 = ({
 }: VerifyEC2Input): Promise<boolean> =>
   getWebCrypto().then(async (crypto) => {
     const publicKey = importEC2PublicKey(cosePublicKey);
+
     const keyData = toEC2KeyData(publicKey);
     const algorithm = toEC2KeyAlgorithm(publicKey);
     const subtleAlg = mapCoseAlgToWebCryptoAlg(
@@ -601,20 +602,23 @@ const toRSAVerifyAlgorithmName = (
   return mapCoseAlgToWebCryptoAlg(algorithm);
 };
 
-const toRSAPssSaltLength = ({ hash, name }: RSAKeyAlgorithm): number => {
-  const DEFAULT_SALT_LENGTH = 0;
+const DEFAULT_SALT_LENGTH = 0;
+const PS256_SALT_LENGTH = 32;
+const PS384_SALT_LENGTH = 48;
+const PS521_SALT_LENGTH = 66;
 
+const toRSAPssSaltLength = ({ hash, name }: RSAKeyAlgorithm): number => {
   switch (name) {
     case Algorithm.RSA_PSS:
       switch (hash.name) {
         case Algorithm.SHA256:
-          return 32;
+          return PS256_SALT_LENGTH;
 
         case Algorithm.SHA384:
-          return 48;
+          return PS384_SALT_LENGTH;
 
         case Algorithm.SHA512:
-          return 64;
+          return PS521_SALT_LENGTH;
 
         default:
           return DEFAULT_SALT_LENGTH;
