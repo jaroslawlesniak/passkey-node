@@ -1,4 +1,13 @@
-import { AsnParser, ECDSASigValue } from "@/lib/asn";
+import { fromBuffer } from "@/lib/base64";
+
+import { AsnParser, ECDSASigValue } from "../asn";
+import {
+  isCOSEAlg,
+  isCOSECrv,
+  isCOSEPublicKeyEC2,
+  isCOSEPublicKeyOKP,
+  isCOSEPublicKeyRSA,
+} from "../cose";
 import {
   COSEALG,
   COSECRV,
@@ -10,17 +19,8 @@ import {
   SubtleCryptoAlg,
   SubtleCryptoCrv,
   SubtleCryptoKeyAlgName,
-} from "@/lib/auth";
-import { fromBuffer } from "@/lib/base64";
-import {
-  isCOSEAlg,
-  isCOSECrv,
-  isCOSEPublicKeyEC2,
-  isCOSEPublicKeyOKP,
-  isCOSEPublicKeyRSA,
-} from "@/lib/cose";
-import { concat } from "@/lib/uint";
-
+} from "../types";
+import { concat } from "../uint";
 import {
   Algorithm,
   ByteTransformation,
