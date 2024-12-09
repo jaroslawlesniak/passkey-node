@@ -9,7 +9,6 @@ import {
 } from "./asn";
 import { decodeFirst, encode } from "./cbor";
 import { digest, verify } from "./crypto";
-import {} from "./crypto";
 import {
   AuthenticationExtensionsAuthenticatorOutputs,
   COSEALG,

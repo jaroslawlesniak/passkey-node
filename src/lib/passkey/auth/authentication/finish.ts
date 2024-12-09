@@ -1,8 +1,11 @@
 import { isBase64URL, toBuffer, toUTF8String } from "@/lib/base64";
 
 import {
+  AuthenticationResponseJSON,
+  AuthenticatorAssertionResponseJSON,
   Base64URLString,
   ClientDataJSON,
+  ParsedAuthenticatorData,
   VerifiedAuthenticationResponse,
   VerifyAuthenticationResponseOpts,
 } from "../../types";
@@ -15,15 +18,260 @@ import {
   verifySignature,
 } from "../../utils";
 
-/**
- * Decode an authenticator's base64url-encoded clientDataJSON to JSON
- */
-function decodeClientDataJSON(data: Base64URLString): ClientDataJSON {
-  const toString = toUTF8String(data);
-  const clientData: ClientDataJSON = JSON.parse(toString);
+const isIdValid = ({ id, rawId }: AuthenticationResponseJSON) => {
+  if (!id) {
+    throw new Error("Credential ID not provided");
+  }
 
-  return clientData;
-}
+  if (id !== rawId) {
+    throw new Error("Credential ID is in incorrect format");
+  }
+};
+
+const isPublicKeyAuthentication = ({ type }: AuthenticationResponseJSON) => {
+  if (type !== "public-key") {
+    throw new Error(`Incorrect type, expected public-key, given ${type}"`);
+  }
+};
+
+const isResponseContentExists = ({ response }: AuthenticationResponseJSON) => {
+  if (!response) {
+    throw new Error("Lack of response");
+  }
+};
+
+const ensuresResponseIsAString = ({ response }: AuthenticationResponseJSON) => {
+  if (typeof response?.clientDataJSON !== "string") {
+    throw new Error("Incorrect response type");
+  }
+};
+
+const validateResponse = ({ response }: VerifyAuthenticationResponseOpts) =>
+  [
+    isIdValid,
+    isPublicKeyAuthentication,
+    isResponseContentExists,
+    ensuresResponseIsAString,
+  ].forEach((validator) => validator(response));
+
+const toClientData = (data: Base64URLString): ClientDataJSON =>
+  JSON.parse(toUTF8String(data));
+
+const toTypeErrorMessage = (type: string) =>
+  `Unexpected response type, found ${type}`;
+
+const isArrayOfExpectedTypesValid = (
+  { type }: ClientDataJSON,
+  { expectedType }: VerifyAuthenticationResponseOpts,
+) => {
+  if (Array.isArray(expectedType) && !expectedType.includes(type)) {
+    throw new Error(toTypeErrorMessage(expectedType.join(", ")));
+  }
+};
+
+const isStringifyExpectedTypeValid = (
+  { type }: ClientDataJSON,
+  { expectedType }: VerifyAuthenticationResponseOpts,
+) => {
+  if (expectedType && type !== expectedType) {
+    throw new Error(toTypeErrorMessage(expectedType.toString()));
+  }
+};
+
+const isValidWebAuthenticationType = ({ type }: ClientDataJSON) => {
+  if (type !== "webauthn.get") {
+    throw new Error(toTypeErrorMessage(type));
+  }
+};
+
+const validateAuthentication = (
+  response: ClientDataJSON,
+  options: VerifyAuthenticationResponseOpts,
+) =>
+  [
+    isArrayOfExpectedTypesValid,
+    isStringifyExpectedTypeValid,
+    isValidWebAuthenticationType,
+  ].forEach((validator) => validator(response, options));
+
+const toDeviceChallengeErrorMessage = (challenge: string) =>
+  `Invalid challenge, expected ${challenge}`;
+
+const isFunctionDeviceChallengeValid = async (
+  { challenge }: ClientDataJSON,
+  { expectedChallenge }: VerifyAuthenticationResponseOpts,
+) => {
+  if (
+    typeof expectedChallenge === "function" &&
+    !(await expectedChallenge(challenge))
+  ) {
+    throw new Error(toDeviceChallengeErrorMessage(challenge));
+  }
+};
+
+const isStringDeviceChallengeValid = async (
+  { challenge }: ClientDataJSON,
+  { expectedChallenge }: VerifyAuthenticationResponseOpts,
+) => {
+  if (challenge !== expectedChallenge) {
+    throw new Error(toDeviceChallengeErrorMessage(expectedChallenge as string));
+  }
+};
+
+const validateDeviceChallenge = (
+  response: ClientDataJSON,
+  options: VerifyAuthenticationResponseOpts,
+) =>
+  [isFunctionDeviceChallengeValid, isStringDeviceChallengeValid].forEach(
+    async (validator) => await validator(response, options),
+  );
+
+const toOriginErrorMessage = (challenge: string) =>
+  `Invalid origin, expected ${challenge}`;
+
+const isOriginInArray = (
+  { origin }: ClientDataJSON,
+  { expectedOrigin }: VerifyAuthenticationResponseOpts,
+) => {
+  if (Array.isArray(expectedOrigin) && !expectedOrigin.includes(origin)) {
+    throw new Error(toOriginErrorMessage(expectedOrigin.join(", ")));
+  }
+};
+
+const isSingleOriginValid = (
+  { origin }: ClientDataJSON,
+  { expectedOrigin }: VerifyAuthenticationResponseOpts,
+) => {
+  if (origin !== expectedOrigin) {
+    throw new Error(toOriginErrorMessage(expectedOrigin as string));
+  }
+};
+
+const validateOrigin = (
+  response: ClientDataJSON,
+  options: VerifyAuthenticationResponseOpts,
+) =>
+  [isOriginInArray, isSingleOriginValid].forEach((validator) =>
+    validator(response, options),
+  );
+
+const isPartInBase64 = (payload: string) => () => {
+  if (!isBase64URL(payload)) {
+    throw new Error("Content is not in base64Url format");
+  }
+};
+
+const isUserHandleValid = ({
+  userHandle,
+}: AuthenticatorAssertionResponseJSON) => {
+  if (userHandle && typeof userHandle !== "string") {
+    throw new Error("userHandle is not a string");
+  }
+};
+
+const validateAssertionResponse = (
+  response: AuthenticatorAssertionResponseJSON,
+) =>
+  [
+    isPartInBase64(response.authenticatorData),
+    isPartInBase64(response.signature),
+    isUserHandleValid,
+  ].forEach((validator) => validator(response));
+
+const isTokenBindingAnObject = ({ tokenBinding }: ClientDataJSON) => {
+  if (tokenBinding && typeof tokenBinding !== "object") {
+    throw new Error("Token is not an object");
+  }
+};
+
+const isTokenBindingInCorrectState = ({ tokenBinding }: ClientDataJSON) => {
+  if (
+    tokenBinding &&
+    ["notSupported", "supported", "present"].indexOf(tokenBinding.status) < 0
+  ) {
+    throw new Error(`Unexpected status: ${tokenBinding.status}`);
+  }
+};
+
+const validateTokenBinding = (response: ClientDataJSON) =>
+  [isTokenBindingAnObject, isTokenBindingInCorrectState].forEach((validator) =>
+    validator(response),
+  );
+
+const toExpectedRPIDs = ({
+  expectedRPID,
+}: VerifyAuthenticationResponseOpts) => {
+  if (typeof expectedRPID === "string") {
+    return [expectedRPID];
+  } else {
+    return expectedRPID;
+  }
+};
+
+const isFidoUserVerification = (
+  { advancedFIDOConfig }: VerifyAuthenticationResponseOpts,
+  { flags }: ParsedAuthenticatorData,
+) => {
+  if (advancedFIDOConfig !== undefined) {
+    const { userVerification } = advancedFIDOConfig;
+
+    if (userVerification === "required") {
+      if (!flags.uv) {
+        throw new Error("Flag (UV) not valid");
+      }
+    }
+  }
+};
+
+const checkUserVerification = (
+  { requireUserVerification = true }: VerifyAuthenticationResponseOpts,
+  { flags }: ParsedAuthenticatorData,
+) => {
+  if (!flags.up) {
+    throw new Error("Flag (UP) not valid");
+  }
+
+  if (requireUserVerification && !flags.uv) {
+    throw new Error("User verification required");
+  }
+};
+
+const validateUserVerification = (
+  response: VerifyAuthenticationResponseOpts,
+  authenticator: ParsedAuthenticatorData,
+) =>
+  [isFidoUserVerification, checkUserVerification].forEach((validator) =>
+    validator(response, authenticator),
+  );
+
+const isCounterBiggerThanExpected = (
+  { authenticator }: VerifyAuthenticationResponseOpts,
+  { counter }: ParsedAuthenticatorData,
+) => {
+  if (
+    (counter > 0 || authenticator.counter > 0) &&
+    counter <= authenticator.counter
+  ) {
+    throw new Error(`Response counter is not valid, given ${counter}`);
+  }
+};
+
+const validateCounter = (
+  response: VerifyAuthenticationResponseOpts,
+  authenticator: ParsedAuthenticatorData,
+) =>
+  [isCounterBiggerThanExpected].forEach((validator) =>
+    validator(response, authenticator),
+  );
+
+const toSignature = (
+  { clientDataJSON, signature }: AuthenticatorAssertionResponseJSON,
+  buffer: Uint8Array,
+) =>
+  toHash(toBuffer(clientDataJSON)).then((hash) => [
+    concat([buffer, hash]),
+    toBuffer(signature),
+  ]);
 
 /**
  * Verify that the user has legitimately completed the authentication process
@@ -43,217 +291,56 @@ function decodeClientDataJSON(data: Base64URLString): ClientDataJSON {
 export async function verifyAuthenticationResponse(
   options: VerifyAuthenticationResponseOpts,
 ): Promise<VerifiedAuthenticationResponse> {
-  const {
-    response,
-    expectedChallenge,
-    expectedOrigin,
-    expectedRPID,
-    expectedType,
-    authenticator,
-    requireUserVerification = true,
-    advancedFIDOConfig,
-  } = options;
-  const {
-    id,
-    rawId,
-    type: credentialType,
-    response: assertionResponse,
-  } = response;
+  const { response, authenticator } = options;
 
-  // Ensure credential specified an ID
-  if (!id) {
-    throw new Error("Missing credential ID");
-  }
+  const assertionResponse = response.response;
 
-  // Ensure ID is base64url-encoded
-  if (id !== rawId) {
-    throw new Error("Credential ID was not base64url-encoded");
-  }
+  validateResponse(options);
 
-  // Make sure credential type is public-key
-  if (credentialType !== "public-key") {
-    throw new Error(
-      `Unexpected credential type ${credentialType}, expected "public-key"`,
-    );
-  }
+  const clientData = toClientData(assertionResponse.clientDataJSON);
 
-  if (!response) {
-    throw new Error("Credential missing response");
-  }
-
-  if (typeof assertionResponse?.clientDataJSON !== "string") {
-    throw new Error("Credential response clientDataJSON was not a string");
-  }
-
-  const clientDataJSON = decodeClientDataJSON(assertionResponse.clientDataJSON);
-
-  const { type, origin, challenge, tokenBinding } = clientDataJSON;
-
-  // Make sure we're handling an authentication
-  if (Array.isArray(expectedType)) {
-    if (!expectedType.includes(type)) {
-      const joinedExpectedType = expectedType.join(", ");
-      throw new Error(
-        `Unexpected authentication response type "${type}", expected one of: ${joinedExpectedType}`,
-      );
-    }
-  } else if (expectedType) {
-    if (type !== expectedType) {
-      throw new Error(
-        `Unexpected authentication response type "${type}", expected "${expectedType}"`,
-      );
-    }
-  } else if (type !== "webauthn.get") {
-    throw new Error(`Unexpected authentication response type: ${type}`);
-  }
-
-  // Ensure the device provided the challenge we gave it
-  if (typeof expectedChallenge === "function") {
-    if (!(await expectedChallenge(challenge))) {
-      throw new Error(
-        `Custom challenge verifier returned false for registration response challenge "${challenge}"`,
-      );
-    }
-  } else if (challenge !== expectedChallenge) {
-    throw new Error(
-      `Unexpected authentication response challenge "${challenge}", expected "${expectedChallenge}"`,
-    );
-  }
-
-  // Check that the origin is our site
-  if (Array.isArray(expectedOrigin)) {
-    if (!expectedOrigin.includes(origin)) {
-      const joinedExpectedOrigin = expectedOrigin.join(", ");
-      throw new Error(
-        `Unexpected authentication response origin "${origin}", expected one of: ${joinedExpectedOrigin}`,
-      );
-    }
-  } else {
-    if (origin !== expectedOrigin) {
-      throw new Error(
-        `Unexpected authentication response origin "${origin}", expected "${expectedOrigin}"`,
-      );
-    }
-  }
-
-  if (!isBase64URL(assertionResponse.authenticatorData)) {
-    throw new Error(
-      "Credential response authenticatorData was not a base64url string",
-    );
-  }
-
-  if (!isBase64URL(assertionResponse.signature)) {
-    throw new Error("Credential response signature was not a base64url string");
-  }
-
-  if (
-    assertionResponse.userHandle &&
-    typeof assertionResponse.userHandle !== "string"
-  ) {
-    throw new Error("Credential response userHandle was not a string");
-  }
-
-  if (tokenBinding) {
-    if (typeof tokenBinding !== "object") {
-      throw new Error("ClientDataJSON tokenBinding was not an object");
-    }
-
-    if (
-      ["present", "supported", "notSupported"].indexOf(tokenBinding.status) < 0
-    ) {
-      throw new Error(`Unexpected tokenBinding status ${tokenBinding.status}`);
-    }
-  }
+  validateAuthentication(clientData, options);
+  validateDeviceChallenge(clientData, options);
+  validateOrigin(clientData, options);
+  validateAssertionResponse(assertionResponse);
+  validateTokenBinding(clientData);
 
   const authDataBuffer = toBuffer(assertionResponse.authenticatorData);
   const parsedAuthData = parseAuthenticatorData(authDataBuffer);
+
+  validateUserVerification(options, parsedAuthData);
+  validateCounter(options, parsedAuthData);
+
   const { rpIdHash, flags, counter, extensionsData } = parsedAuthData;
 
-  // Make sure the response's RP ID is ours
-  let expectedRPIDs: string[] = [];
-  if (typeof expectedRPID === "string") {
-    expectedRPIDs = [expectedRPID];
-  } else {
-    expectedRPIDs = expectedRPID;
-  }
-
-  const matchedRPID = await matchExpectedRPID(rpIdHash, expectedRPIDs);
-
-  if (advancedFIDOConfig !== undefined) {
-    const { userVerification: fidoUserVerification } = advancedFIDOConfig;
-
-    /**
-     * Use FIDO Conformance-defined rules for verifying UP and UV flags
-     */
-    if (fidoUserVerification === "required") {
-      // Require `flags.uv` be true (implies `flags.up` is true)
-      if (!flags.uv) {
-        throw new Error(
-          "User verification required, but user could not be verified",
-        );
-      }
-    } else if (
-      fidoUserVerification === "preferred" ||
-      fidoUserVerification === "discouraged"
-    ) {
-      // Ignore `flags.uv`
-    }
-  } else {
-    /**
-     * Use WebAuthn spec-defined rules for verifying UP and UV flags
-     */
-    // WebAuthn only requires the user presence flag be true
-    if (!flags.up) {
-      throw new Error("User not present during authentication");
-    }
-
-    // Enforce user verification if required
-    if (requireUserVerification && !flags.uv) {
-      throw new Error(
-        "User verification required, but user could not be verified",
-      );
-    }
-  }
-
-  const clientDataHash = await toHash(
-    toBuffer(assertionResponse.clientDataJSON),
+  const matchedRPID = await matchExpectedRPID(
+    rpIdHash,
+    toExpectedRPIDs(options),
   );
-  const signatureBase = concat([authDataBuffer, clientDataHash]);
 
-  const signature = toBuffer(assertionResponse.signature);
+  const verified = await toSignature(assertionResponse, authDataBuffer).then(
+    ([data, signature]) =>
+      verifySignature({
+        signature,
+        data,
+        credentialPublicKey: authenticator.credentialPublicKey,
+      }),
+  );
 
-  if (
-    (counter > 0 || authenticator.counter > 0) &&
-    counter <= authenticator.counter
-  ) {
-    // Error out when the counter in the DB is greater than or equal to the counter in the
-    // dataStruct. It's related to how the authenticator maintains the number of times its been
-    // used for this client. If this happens, then someone's somehow increased the counter
-    // on the device without going through this site
-    throw new Error(
-      `Response counter value ${counter} was lower than expected ${authenticator.counter}`,
-    );
-  }
-
-  const { credentialDeviceType, credentialBackedUp } = parseBackupFlags(flags);
-
-  const toReturn: VerifiedAuthenticationResponse = {
-    verified: await verifySignature({
-      signature,
-      data: signatureBase,
-      credentialPublicKey: authenticator.credentialPublicKey,
-    }),
-    authenticationInfo: {
-      newCounter: counter,
-      credentialID: authenticator.credentialID,
-      userVerified: flags.uv,
-      credentialDeviceType,
-      credentialBackedUp,
-      authenticatorExtensionResults: extensionsData,
-      origin: clientDataJSON.origin,
-      rpID: matchedRPID,
-    },
+  const authenticationInfo = {
+    ...parseBackupFlags(flags),
+    newCounter: counter,
+    credentialID: authenticator.credentialID,
+    userVerified: flags.uv,
+    authenticatorExtensionResults: extensionsData,
+    origin: clientData.origin,
+    rpID: matchedRPID,
   };
 
-  return toReturn;
+  const payload: VerifiedAuthenticationResponse = {
+    verified,
+    authenticationInfo,
+  };
+
+  return payload;
 }
