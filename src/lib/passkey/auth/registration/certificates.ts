@@ -25,16 +25,13 @@ import { toDataView, toHex } from "../../uint";
 import { mapX509SignatureAlgToCOSEAlg, verifySignature } from "../../utils";
 import { TPM_ALG, TPM_ST } from "./constants";
 
-/**
- * Take a certificate in PEM format and convert it to bytes
- */
-export function convertPEMToBytes(pem: string): Uint8Array {
-  const certBase64 = pem
+export const convertPEMToBytes = (pem: string): Uint8Array => {
+  const base64 = pem
     .replace("-----BEGIN CERTIFICATE-----", "")
     .replace("-----END CERTIFICATE-----", "")
     .replace(/[\n ]/g, "");
 
-  return toBuffer(certBase64, "base64");
+  return toBuffer(base64, "base64");
 }
 
 const cacheRevokedCerts: { [certAuthorityKeyID: string]: CAAuthorityInfo } = {};

@@ -1,11 +1,11 @@
 import { fromBuffer } from "@/lib/base64";
 
-import { rpId } from "../../config";
+import { rpID } from "../../config";
 import { generateChallenge } from "../../native";
 import { PublicKeyCredentialRequestOptionsJSON } from "../../types";
 
 const defaults: Partial<PublicKeyCredentialRequestOptionsJSON> = {
-  rpId,
+  rpId: rpID,
   timeout: 60000,
   allowCredentials: [], // not yet supported
   userVerification: "required",
